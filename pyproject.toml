@@ -1,0 +1,19 @@
+[project]
+name = "alilog"
+version = "0.1.0"
+description = "CLI for querying Aliyun SLS console logs and log context"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "click>=8.3.2",
+    "requests>=2.33.1",
+]
+
+[project.scripts]
+alilog = "alilog.cli:main"
+
+[tool.uv]
+package = true
+
+[dependency-groups]
+dev = []
