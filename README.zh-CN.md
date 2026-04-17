@@ -27,18 +27,18 @@
 
 ## 安装
 
-在仓库内直接运行：
+从 GitHub 安装成用户级命令：
+
+```bash
+uv tool install git+https://github.com/cp5670681/alilog.git
+alilog --help
+```
+
+如果是在本地仓库里开发或直接运行：
 
 ```bash
 uv sync
 uv run alilog --help
-```
-
-如果希望安装成用户级命令：
-
-```bash
-uv tool install .
-alilog --help
 ```
 
 ## 认证

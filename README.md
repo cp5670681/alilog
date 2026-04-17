@@ -27,18 +27,18 @@ This project keeps a narrow CLI surface for two common workflows:
 
 ## Install
 
-Run directly from the repository:
+Install as a user-level command from GitHub:
+
+```bash
+uv tool install git+https://github.com/cp5670681/alilog.git
+alilog --help
+```
+
+For local development or running directly from a repository checkout:
 
 ```bash
 uv sync
 uv run alilog --help
-```
-
-Install as a user-level command from a local checkout:
-
-```bash
-uv tool install .
-alilog --help
 ```
 
 ## Authentication
