@@ -1,13 +1,47 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "alilog"
 version = "0.1.0"
-description = "CLI for querying Aliyun SLS console logs and log context"
-readme = "README.md"
-requires-python = ">=3.13"
+description = "Unofficial CLI for querying Alibaba Cloud SLS console logs and log context"
+readme = { file = "README.md", content-type = "text/markdown" }
+requires-python = ">=3.10"
+license = "MIT"
+authors = [
+    { name = "cp5670681", email = "cp5670681@163.com" },
+]
+keywords = [
+    "aliyun",
+    "alibaba-cloud",
+    "sls",
+    "logs",
+    "cli",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: System :: Logging",
+    "Topic :: Utilities",
+]
 dependencies = [
     "click>=8.3.2",
-    "requests>=2.33.1",
+    "httpx>=0.28.1",
 ]
+
+[project.urls]
+Documentation = "https://github.com/cp5670681/alilog#readme"
+Homepage = "https://github.com/cp5670681/alilog"
+Issues = "https://github.com/cp5670681/alilog/issues"
+Repository = "https://github.com/cp5670681/alilog"
 
 [project.scripts]
 alilog = "alilog.cli:main"
@@ -16,4 +50,30 @@ alilog = "alilog.cli:main"
 package = true
 
 [dependency-groups]
-dev = []
+dev = [
+    "mypy>=1.18.2",
+    "pytest>=9.0.3",
+    "ruff>=0.14.1",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py310"
+
+[tool.ruff.lint]
+select = [
+    "E",
+    "F",
+    "I",
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["alilog"]
+
+[tool.mypy]
+python_version = "3.10"
+files = ["alilog"]
+warn_unused_configs = true
+check_untyped_defs = true
