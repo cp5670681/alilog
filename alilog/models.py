@@ -23,6 +23,13 @@ class AuthConfig:
 
 
 @dataclass(frozen=True)
+class ProjectConfig:
+    project: str | None = None
+    default_logstore: str | None = None
+    logstores: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
 class SearchWindow:
     start: int
     end: int
@@ -34,3 +41,4 @@ class RuntimeOptions:
     cookie: str | None
     csrf_token: str | None
     config_path: Path
+    project_config_path: Path | None

@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-04-17
+
+### Added
+
+- Claude Code skill template at `alilog/assets/claude-skill/SKILL.md`
+- `install-skill` command for installing the bundled Claude Code skill into `~/.claude/skills/alilog/SKILL.md`
+- Packaged skill asset distribution via `setuptools` package data
+- Project-level `.alilog.json` defaults for `project`, `default_logstore`, and `logstores`
+- Documentation for skill installation and project-level defaults in both English and Chinese READMEs
+- Tests covering skill installation and project config driven CLI behavior
+
+### Fixed
+
+- Explicit `--project` and `--logstore` arguments now bypass invalid project config files instead of failing early
+- `auth save` and `auth clear` no longer depend on project config parsing
+- `context` README examples now show a safe explicit invocation and document when defaults may be omitted
+
 ## [0.1.0] - 2026-04-17
 
 ### Added

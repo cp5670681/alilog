@@ -9,7 +9,15 @@ import httpx
 from .inputs import DEFAULT_TIMEZONE
 from .models import AliLogError
 from .rendering import render_context, render_search
-from .usecases import clear_auth, load_runtime, run_context, run_search, save_auth
+from .skills import INSTALL_REPO_URL
+from .usecases import (
+    clear_auth,
+    install_skill,
+    load_runtime,
+    run_context,
+    run_search,
+    save_auth,
+)
 
 
 def fail_as_click(exc: Exception) -> Exception:
@@ -33,8 +41,14 @@ def cli() -> None:
 
 
 @cli.command("search")
-@click.option("--project", required=True, help="ProjectName")
-@click.option("--logstore", required=True, help="LogStoreName")
+@click.option(
+    "--project",
+    help="ProjectName。未提供时尝试从项目根目录的 .alilog.json 读取。",
+)
+@click.option(
+    "--logstore",
+    help="LogStoreName。未提供时尝试从项目根目录的 .alilog.json 读取。",
+)
 @click.option(
     "--from",
     "start",
@@ -95,8 +109,14 @@ def search_command(
 
 
 @cli.command("context")
-@click.option("--project", required=True, help="ProjectName")
-@click.option("--logstore", required=True, help="LogStoreName")
+@click.option(
+    "--project",
+    help="ProjectName。未提供时尝试从项目根目录的 .alilog.json 读取。",
+)
+@click.option(
+    "--logstore",
+    help="LogStoreName。未提供时尝试从项目根目录的 .alilog.json 读取。",
+)
 @click.option(
     "--pack-meta",
     required=True,
@@ -159,6 +179,15 @@ def auth_clear() -> None:
     runtime = load_runtime()
     clear_auth(runtime)
     click.echo(f"已删除配置文件: {runtime.config_path}")
+
+
+@cli.command("install-skill")
+@as_click_command
+def install_skill_command() -> None:
+    path = install_skill()
+    click.echo(f"已安装 Claude skill: {path}")
+    click.echo("如果当前机器还没有安装 alilog CLI，可执行:")
+    click.echo(f"  uv tool install {INSTALL_REPO_URL}")
 
 
 def main() -> None:

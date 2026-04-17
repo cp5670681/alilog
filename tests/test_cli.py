@@ -59,10 +59,22 @@ def test_auth_clear_removes_config_file(
     assert not config_path.exists()
 
 
+def test_auth_save_ignores_invalid_project_config(
+    invoke_cli,
+    project_root: Path,
+) -> None:
+    (project_root / ".alilog.json").write_text("{bad json", encoding="utf-8")
+
+    result = invoke_cli(["auth", "save", "--cookie", "cookie=value"])
+
+    assert result.exit_code == 0, result.output
+
+
 def test_context_always_calls_prev_and_next(
     invoke_cli,
     monkeypatch: pytest.MonkeyPatch,
     save_auth,
+    save_project_config,
 ) -> None:
     fake_client = MagicMock()
     fake_client.context_logs.side_effect = [
@@ -92,15 +104,14 @@ def test_context_always_calls_prev_and_next(
         },
     ]
     save_auth()
+    save_project_config(
+        '{"project":"project-a","default_logstore":"research","logstores":["research","nginx","app"]}'
+    )
     monkeypatch.setattr(usecases, "get_client", lambda runtime: fake_client)
 
     result = invoke_cli(
         [
             "context",
-            "--project",
-            "project-a",
-            "--logstore",
-            "research",
             "--pack-meta",
             "1|cursor|54|6",
             "--pack-id",
@@ -118,6 +129,7 @@ def test_search_uses_auth_from_default_config(
     invoke_cli,
     monkeypatch: pytest.MonkeyPatch,
     save_auth,
+    save_project_config,
 ) -> None:
     fake_client = MagicMock()
     fake_client.search_logs.return_value = {
@@ -125,15 +137,14 @@ def test_search_uses_auth_from_default_config(
         "data": [{"__time__": 1776352860, "content": "hello"}],
     }
     save_auth()
+    save_project_config(
+        '{"project":"project-a","default_logstore":"research","logstores":["research","nginx","app"]}'
+    )
     monkeypatch.setattr(usecases, "get_client", lambda runtime: fake_client)
 
     result = invoke_cli(
         [
             "search",
-            "--project",
-            "project-a",
-            "--logstore",
-            "research",
             "--from",
             "2026-04-16 23:06:00",
             "--to",
@@ -153,19 +164,19 @@ def test_search_accepts_last_with_empty_query(
     invoke_cli,
     monkeypatch: pytest.MonkeyPatch,
     save_auth,
+    save_project_config,
 ) -> None:
     fake_client = MagicMock()
     fake_client.search_logs.return_value = {"meta": {"count": 0}, "data": []}
     save_auth()
+    save_project_config(
+        '{"project":"project-a","default_logstore":"research","logstores":["research","nginx","app"]}'
+    )
     monkeypatch.setattr(usecases, "get_client", lambda runtime: fake_client)
 
     result = invoke_cli(
         [
             "search",
-            "--project",
-            "project-a",
-            "--logstore",
-            "research",
             "--to",
             "2026-04-16 23:21:00",
             "--last",
@@ -182,18 +193,140 @@ def test_search_accepts_last_with_empty_query(
     assert kwargs["query"] == "with_pack_meta"
 
 
-@pytest.mark.parametrize("option", ["--page", "--size"])
-def test_search_rejects_non_positive_pagination_values(
+def test_explicit_project_and_logstore_override_project_config(
     invoke_cli,
-    option: str,
+    monkeypatch: pytest.MonkeyPatch,
+    save_auth,
+    save_project_config,
 ) -> None:
+    fake_client = MagicMock()
+    fake_client.search_logs.return_value = {"meta": {"count": 0}, "data": []}
+    save_auth()
+    save_project_config(
+        '{"project":"project-a","default_logstore":"research","logstores":["research","nginx","app"]}'
+    )
+    monkeypatch.setattr(usecases, "get_client", lambda runtime: fake_client)
+
     result = invoke_cli(
         [
             "search",
             "--project",
-            "project-a",
+            "project-b",
             "--logstore",
-            "research",
+            "nginx",
+            "--from",
+            "2026-04-16 23:06:00",
+            "--to",
+            "2026-04-16 23:21:00",
+            "--query",
+            "error",
+        ]
+    )
+
+    assert result.exit_code == 0, result.output
+    _, kwargs = fake_client.search_logs.call_args
+    assert kwargs["project"] == "project-b"
+    assert kwargs["logstore"] == "nginx"
+
+
+def test_search_with_explicit_project_and_logstore_ignores_invalid_project_config(
+    invoke_cli,
+    monkeypatch: pytest.MonkeyPatch,
+    project_root: Path,
+    save_auth,
+) -> None:
+    fake_client = MagicMock()
+    fake_client.search_logs.return_value = {"meta": {"count": 0}, "data": []}
+    save_auth()
+    (project_root / ".alilog.json").write_text("{bad json", encoding="utf-8")
+    monkeypatch.setattr(usecases, "get_client", lambda runtime: fake_client)
+
+    result = invoke_cli(
+        [
+            "search",
+            "--project",
+            "project-b",
+            "--logstore",
+            "nginx",
+            "--from",
+            "2026-04-16 23:06:00",
+            "--to",
+            "2026-04-16 23:21:00",
+            "--query",
+            "error",
+        ]
+    )
+
+    assert result.exit_code == 0, result.output
+    _, kwargs = fake_client.search_logs.call_args
+    assert kwargs["project"] == "project-b"
+    assert kwargs["logstore"] == "nginx"
+
+
+def test_search_requires_project_when_project_config_missing(
+    invoke_cli,
+    monkeypatch: pytest.MonkeyPatch,
+    save_auth,
+) -> None:
+    fake_client = MagicMock()
+    save_auth()
+    monkeypatch.setattr(usecases, "get_client", lambda runtime: fake_client)
+
+    result = invoke_cli(
+        [
+            "search",
+            "--from",
+            "2026-04-16 23:06:00",
+            "--to",
+            "2026-04-16 23:21:00",
+            "--query",
+            "error",
+        ]
+    )
+
+    assert result.exit_code != 0
+    assert "缺少 ProjectName" in result.output
+
+
+def test_search_requires_logstore_when_project_config_missing_default_logstore(
+    invoke_cli,
+    monkeypatch: pytest.MonkeyPatch,
+    save_auth,
+    save_project_config,
+) -> None:
+    fake_client = MagicMock()
+    save_auth()
+    save_project_config('{"project":"project-a","logstores":["research","nginx","app"]}')
+    monkeypatch.setattr(usecases, "get_client", lambda runtime: fake_client)
+
+    result = invoke_cli(
+        [
+            "search",
+            "--from",
+            "2026-04-16 23:06:00",
+            "--to",
+            "2026-04-16 23:21:00",
+            "--query",
+            "error",
+        ]
+    )
+
+    assert result.exit_code != 0
+    assert "缺少 LogStoreName" in result.output
+
+
+@pytest.mark.parametrize("option", ["--page", "--size"])
+def test_search_rejects_non_positive_pagination_values(
+    invoke_cli,
+    option: str,
+    save_project_config,
+) -> None:
+    save_project_config(
+        '{"project":"project-a","default_logstore":"research","logstores":["research","nginx","app"]}'
+    )
+    result = invoke_cli(
+        [
+            "search",
             "--from",
             "2026-04-16 23:06:00",
             "--to",
@@ -209,14 +342,13 @@ def test_search_rejects_non_positive_pagination_values(
     assert "x>=1" in result.output
 
 
-def test_context_rejects_non_positive_size(invoke_cli) -> None:
+def test_context_rejects_non_positive_size(invoke_cli, save_project_config) -> None:
+    save_project_config(
+        '{"project":"project-a","default_logstore":"research","logstores":["research","nginx","app"]}'
+    )
     result = invoke_cli(
         [
             "context",
-            "--project",
-            "project-a",
-            "--logstore",
-            "research",
             "--pack-meta",
             "1|cursor|54|6",
             "--pack-id",
@@ -228,3 +360,17 @@ def test_context_rejects_non_positive_size(invoke_cli) -> None:
 
     assert result.exit_code != 0
     assert "x>=1" in result.output
+
+
+def test_install_skill_writes_claude_skill(
+    invoke_cli,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("CLAUDE_HOME", str(tmp_path / "claude-home"))
+
+    result = invoke_cli(["install-skill"])
+
+    assert result.exit_code == 0, result.output
+    assert "已安装 Claude skill" in result.output
+    assert (tmp_path / "claude-home" / "skills" / "alilog" / "SKILL.md").exists()

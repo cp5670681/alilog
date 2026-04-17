@@ -49,6 +49,16 @@ CLI 默认从下面的文件读取认证信息：
 ~/.alilog.json
 ```
 
+项目级默认值会从当前工作目录向上查找最近的项目根目录 `.alilog.json`。这个文件适合存放非敏感默认值，比如：
+
+```json
+{
+  "project": "k8s-log-c19af6eaf83e44c28a7eb544564eee247",
+  "default_logstore": "research",
+  "logstores": ["research", "research-sidekiq-default"]
+}
+```
+
 保存浏览器登录后的 Cookie：
 
 ```bash
@@ -81,6 +91,17 @@ uv run alilog auth clear
 
 查询语句会自动追加 `with_pack_meta`，结果可以直接用于 `context`。
 
+如果当前项目已经有 `.alilog.json`，那么 `--project` 和 `--logstore` 可以省略：
+
+```bash
+uv run alilog search \
+  --from '2026-04-16 23:06:00' \
+  --to '2026-04-16 23:21:00' \
+  --query 'error'
+```
+
+如果需要，也可以继续显式覆盖：
+
 ```bash
 uv run alilog search \
   --project k8s-log-c19af6eaf83e44c28a7eb544564eee247 \
@@ -103,7 +124,9 @@ uv run alilog search \
 
 ## 查上下文
 
-`context` 直接使用 `search` 输出里的 `pack_id` 和 `pack_meta`，默认同时查前文和后文：
+`context` 直接使用 `search` 输出里的 `pack_id` 和 `pack_meta`，默认同时查前文和后文。
+
+如果项目根目录已经有 `.alilog.json`，那么 `--project` 和 `--logstore` 也可以省略。下面先给出最稳妥的显式写法：
 
 ```bash
 uv run alilog context \
@@ -140,6 +163,31 @@ uv run mypy
 ```
 
 CI 会在 Python 3.10、3.11、3.12、3.13 上运行 Ruff、mypy 和测试。
+
+## AI Skill 安装
+
+这个项目现在只提供 Claude Code skill。
+
+安装好 `alilog` 之后，可以直接执行：
+
+```bash
+alilog install-skill
+```
+
+如果是在新机器上，希望从 GitHub 一次完成工具安装再安装 skill，可以执行：
+
+```bash
+uv tool install git+https://github.com/cp5670681/alilog.git
+alilog install-skill
+```
+
+这个命令会把 skill 写到 `~/.claude/skills/alilog/SKILL.md`，和 Claude Code 官方文档里的 skills 目录结构一致。
+
+也支持手动复制模板：
+
+- 把 `alilog/assets/claude-skill/SKILL.md` 复制到 `~/.claude/skills/alilog/SKILL.md`
+
+这个 skill 文件里已经带了 `alilog` CLI 的安装说明；如果用户只复制了 skill，也能看到如何先安装工具。
 
 ## License
 

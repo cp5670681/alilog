@@ -5,7 +5,7 @@ import os
 import tempfile
 from pathlib import Path
 
-from .models import AliLogError, AuthConfig
+from .models import AliLogError, AuthConfig, ProjectConfig
 
 DEFAULT_CONFIG_NAME = ".alilog.json"
 
@@ -34,6 +34,56 @@ def load_auth_config(path: Path) -> AuthConfig:
     if csrf_token is not None and not isinstance(csrf_token, str):
         raise AliLogError(f"配置文件中的 csrf_token 必须是字符串: {path}")
     return AuthConfig(cookie=cookie, csrf_token=csrf_token)
+
+
+def find_project_config_path(start: Path | None = None) -> Path | None:
+    current = (start or Path.cwd()).resolve()
+    home = Path.home().resolve()
+    for directory in (current, *current.parents):
+        if directory == home:
+            continue
+        candidate = directory / DEFAULT_CONFIG_NAME
+        if candidate.exists():
+            return candidate
+    return None
+
+
+def load_project_config(path: Path | None) -> ProjectConfig:
+    if path is None or not path.exists():
+        return ProjectConfig()
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        return ProjectConfig()
+    except OSError as exc:
+        raise AliLogError(f"读取项目配置文件失败: {path}") from exc
+    except ValueError as exc:
+        raise AliLogError(f"项目配置文件不是合法 JSON: {path}") from exc
+    if not isinstance(payload, dict):
+        raise AliLogError(f"项目配置文件格式无效: {path}")
+
+    project = payload.get("project")
+    default_logstore = payload.get("default_logstore")
+    logstores = payload.get("logstores", [])
+
+    if project is not None and not isinstance(project, str):
+        raise AliLogError(f"项目配置中的 project 必须是字符串: {path}")
+    if default_logstore is not None and not isinstance(default_logstore, str):
+        raise AliLogError(f"项目配置中的 default_logstore 必须是字符串: {path}")
+    if not isinstance(logstores, list) or any(
+        not isinstance(item, str) for item in logstores
+    ):
+        raise AliLogError(f"项目配置中的 logstores 必须是字符串数组: {path}")
+    if default_logstore and logstores and default_logstore not in logstores:
+        raise AliLogError(
+            f"项目配置中的 default_logstore 必须存在于 logstores 中: {path}"
+        )
+
+    return ProjectConfig(
+        project=project,
+        default_logstore=default_logstore,
+        logstores=tuple(logstores),
+    )
 
 
 def save_auth_config(path: Path, config: AuthConfig) -> None:

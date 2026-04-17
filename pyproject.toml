@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "alilog"
-version = "0.1.0"
+version = "0.2.0"
 description = "Unofficial CLI for querying Alibaba Cloud SLS console logs and log context"
 readme = { file = "README.md", content-type = "text/markdown" }
 requires-python = ">=3.10"
@@ -48,6 +48,11 @@ alilog = "alilog.cli:main"
 
 [tool.uv]
 package = true
+
+[tool.setuptools.package-data]
+alilog = [
+    "assets/claude-skill/SKILL.md",
+]
 
 [dependency-groups]
 dev = [
