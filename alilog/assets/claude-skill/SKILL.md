@@ -18,7 +18,7 @@ allowed-tools: Bash(alilog:*), Bash(which alilog), Bash(uv tool install:*), Bash
 
 - 查询某个时间范围内的日志
 - 基于某条日志继续抓取上下文
-- 保存或清除本地认证信息
+- 保存本地认证信息
 - 不确定命令怎么写时，先通过 `--help` 自查再执行
 
 你的目标不是解释 `alilog` 的源码，而是把用户需求翻译成正确的 CLI 命令并给出结果摘要。
@@ -66,7 +66,6 @@ alilog auth save --help
 - `search`: `alilog search --project ... --logstore ... --from ... --to ... --query ...`
 - `context`: `alilog context --project ... --logstore ... --pack-id ... --pack-meta ...`
 - `auth save`: `alilog auth save --cookie ... [--csrf-token ...]`
-- `auth clear`: `alilog auth clear`
 
 ## 配置约定
 
@@ -147,12 +146,6 @@ alilog context \
 
 ```bash
 alilog auth save --cookie 'aliyun_lang=zh; ...' --csrf-token 'f11fea43'
-```
-
-### 5. 清除认证信息
-
-```bash
-alilog auth clear
 ```
 
 ## 何时需要补问用户

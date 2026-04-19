@@ -1,3 +1,15 @@
+"""
+命令行接口模块。
+
+本模块定义了 alilog 的命令行接口，使用 Click 框架实现。
+提供以下命令：
+- search: 日志查询
+- context: 上下文查询
+- auth save: 保存认证配置
+- auth login: 通过浏览器登录
+- install-skill: 安装 Claude skill
+"""
+
 from __future__ import annotations
 
 from functools import wraps
@@ -11,9 +23,9 @@ from .models import AliLogError
 from .rendering import render_context, render_search
 from .skills import INSTALL_REPO_URL
 from .usecases import (
-    clear_auth,
     install_skill,
     load_runtime,
+    login_auth,
     run_context,
     run_search,
     save_auth,
@@ -21,10 +33,26 @@ from .usecases import (
 
 
 def fail_as_click(exc: Exception) -> Exception:
+    """将异常转换为 Click 异常。
+
+    Args:
+        exc: 原始异常
+
+    Returns:
+        Click 异常
+    """
     return click.ClickException(str(exc))
 
 
 def as_click_command(func: Any) -> Any:
+    """装饰器：捕获异常并转换为 Click 异常。
+
+    Args:
+        func: 要装饰的函数
+
+    Returns:
+        装饰后的函数
+    """
     @wraps(func)
     def wrapper(*args: Any, **kwargs: Any) -> Any:
         try:
@@ -93,6 +121,10 @@ def search_command(
     page: int,
     size: int,
 ) -> None:
+    """执行日志查询。
+
+    查询指定项目和日志库的日志，支持多种时间格式和分页。
+    """
     window, response = run_search(
         runtime=load_runtime(),
         project=project,
@@ -145,6 +177,10 @@ def context_command(
     size: int,
     timezone: str,
 ) -> None:
+    """执行上下文查询。
+
+    查询指定日志位置前后的上下文日志。
+    """
     responses = run_context(
         runtime=load_runtime(),
         project=project,
@@ -168,22 +204,58 @@ def auth_group() -> None:
 @click.option("--csrf-token", help="要保存的 csrf token。")
 @as_click_command
 def auth_save(cookie: str | None, csrf_token: str | None) -> None:
+    """保存认证配置。
+
+    将 Cookie 和 CSRF Token 保存到 ~/.alilog.json 文件。
+    """
     runtime = load_runtime()
     save_auth(runtime, cookie, csrf_token)
     click.echo(f"已保存认证配置到: {runtime.config_path}")
 
 
-@auth_group.command("clear")
+@auth_group.command("login")
+@click.option(
+    "--browser",
+    help="Chromium 浏览器可执行文件路径。未提供时自动探测 Chrome/Chromium/Edge。",
+)
+@click.option(
+    "--url",
+    "login_url",
+    default="https://sls.console.aliyun.com/lognext/",
+    show_default=True,
+    help="打开的登录页地址。",
+)
 @as_click_command
-def auth_clear() -> None:
+def auth_login(browser: str | None, login_url: str) -> None:
+    """通过浏览器登录。
+
+    启动浏览器，等待用户完成阿里云登录，自动提取并保存认证信息。
+    """
     runtime = load_runtime()
-    clear_auth(runtime)
-    click.echo(f"已删除配置文件: {runtime.config_path}")
+    click.echo("正在启动浏览器并连接 CDP...")
+    click.echo("请在打开的页面里完成阿里云登录。")
+    config = login_auth(
+        runtime,
+        browser=browser,
+        login_url=login_url,
+        confirm=lambda: click.prompt(
+            "登录完成后回到终端按回车继续",
+            default="",
+            show_default=False,
+        ),
+    )
+    click.echo(f"已保存认证配置到: {runtime.config_path}")
+    if config.csrf_token:
+        click.echo("已同时提取 csrf token。")
 
 
 @cli.command("install-skill")
 @as_click_command
 def install_skill_command() -> None:
+    """安装 Claude skill。
+
+    将 alilog skill 安装到 Claude 的 skills 目录，以便在 Claude 中使用。
+    """
     path = install_skill()
     click.echo(f"已安装 Claude skill: {path}")
     click.echo("如果当前机器还没有安装 alilog CLI，可执行:")
@@ -191,4 +263,5 @@ def install_skill_command() -> None:
 
 
 def main() -> None:
+    """CLI 入口点。"""
     cli(standalone_mode=True)

@@ -29,7 +29,6 @@ def test_parse_pack_meta_rejects_invalid_value() -> None:
     ("raw_value", "expected"),
     [
         ("1776352860", 1776352860),
-        ("1776352860000", 1776352860),
         ("2026-04-16 23:21:00", 1776352860),
     ],
 )
@@ -37,8 +36,8 @@ def test_parse_time_value_supported_formats(raw_value: str, expected: int) -> No
     assert parse_time_value(raw_value, "Asia/Shanghai") == expected
 
 
-@pytest.mark.parametrize("raw_value", ["17763528600", "177635286000"])
-def test_parse_time_value_rejects_ambiguous_numeric_timestamp(raw_value: str) -> None:
+@pytest.mark.parametrize("raw_value", ["17763528600", "177635286000", "1776352860000"])
+def test_parse_time_value_rejects_invalid_numeric_timestamp(raw_value: str) -> None:
     with pytest.raises(AliLogError):
         parse_time_value(raw_value, "Asia/Shanghai")
 

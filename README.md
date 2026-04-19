@@ -1,55 +1,55 @@
 # alilog
 
-English | [简体中文](README.zh-CN.md)
+[English](README.en.md) | 简体中文
 
-`alilog` is an unofficial command-line tool for querying Alibaba Cloud SLS console logs and retrieving log context around a selected record.
+`alilog` 是一个非官方的阿里云 SLS Console 命令行工具，用于查询日志，并基于某条日志继续获取上下文。
 
 Status: experimental
 
-## Why This Project Exists
+## 项目定位
 
-This project keeps a narrow CLI surface for two common workflows:
+这个项目只保留两条核心链路：
 
-- `search`: query logs from an SLS project/logstore
-- `context`: fetch previous and next logs from a `search` result
+- `search`：查日志
+- `context`：基于 `search` 结果继续查上下文
 
-## Safety Notes
+## 安全说明
 
-- This tool depends on an Alibaba Cloud Console login session.
-- Authentication is based on browser cookies, so it is intended for local, trusted machines only.
-- The project is not affiliated with Alibaba Cloud.
-- Console APIs may change without notice.
+- 这个工具依赖阿里云登录态。
+- 认证基于浏览器 Cookie，只建议在本机和受信任环境使用。
+- 本项目与阿里云无官方关联。
+- Console API 可能随时变化。
 
-## Requirements
+## 环境要求
 
 - Python 3.10+
-- `uv` for local development and installation in the examples below
+- 示例中的安装和开发命令使用 `uv`
 
-## Install
+## 安装
 
-Install as a user-level command from GitHub:
+从 GitHub 安装成用户级命令：
 
 ```bash
 uv tool install git+https://github.com/cp5670681/alilog.git
 alilog --help
 ```
 
-For local development or running directly from a repository checkout:
+对于本地开发或直接从仓库运行：
 
 ```bash
 uv sync
 uv run alilog --help
 ```
 
-## Authentication
+## 认证
 
-The CLI reads credentials from:
+CLI 默认从下面的文件读取认证信息：
 
 ```text
 ~/.alilog.json
 ```
 
-The repository-level defaults are read from the nearest project-root `.alilog.json` found by walking upward from the current working directory. This file is intended for non-secret defaults such as:
+项目级默认值会从当前工作目录向上查找最近的项目根目录 `.alilog.json`。这个文件适合存放非敏感默认值，比如：
 
 ```json
 {
@@ -59,39 +59,39 @@ The repository-level defaults are read from the nearest project-root `.alilog.js
 }
 ```
 
-Save a browser cookie:
+保存浏览器登录后的Cookie以及csrf-token：
 
 ```bash
-uv run alilog auth save \
-  --cookie 'aliyun_lang=zh; ...'
-```
-
-If you also captured `x-csrf-token`, save it together with the cookie:
-
-```bash
-uv run alilog auth save \
+alilog auth save \
   --cookie 'aliyun_lang=zh; ...' \
   --csrf-token 'f11fea43'
 ```
 
-Clear the local auth file:
+也可以让 `alilog` 启动一个浏览器，手动完成登录后自动提取 Cookie：
 
 ```bash
-uv run alilog auth clear
+alilog auth login
 ```
 
-## Search Logs
+如果自动探测不到 Chrome/Chromium/Edge，可以显式指定浏览器可执行文件：
 
-`search` accepts:
+```bash
+alilog auth login \
+  --browser '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
+```
 
-- Unix timestamps in 10-digit seconds or 13-digit milliseconds
-- ISO timestamps
+## 查日志
+
+`search` 支持：
+
+- Unix 时间戳（10 位秒级）
+- ISO 时间
 - `YYYY-MM-DD HH:MM[:SS]`
-- relative windows via `--last`
+- 相对时间窗口 `--last`
 
-The query automatically appends `with_pack_meta`, so the output can be passed into `context`.
+查询语句会自动追加 `with_pack_meta`，结果可以直接用于 `context`。
 
-If the current project already has `.alilog.json`, `--project` and `--logstore` are optional:
+如果当前项目已经有 `.alilog.json`，那么 `--project` 和 `--logstore` 可以省略：
 
 ```bash
 uv run alilog search \
@@ -100,7 +100,7 @@ uv run alilog search \
   --query 'error'
 ```
 
-You can still override them explicitly when needed:
+如果需要，也可以继续显式覆盖：
 
 ```bash
 uv run alilog search \
@@ -111,22 +111,21 @@ uv run alilog search \
   --query 'error'
 ```
 
-Relative window example:
+相对时间窗口示例：
 
 ```bash
 uv run alilog search \
   --project k8s-log-c19af6eaf83e44c28a7eb544564eee247 \
   --logstore research \
-  --to '2026-04-16 23:21:00' \
   --last 15m \
   --query 'error'
 ```
 
-## Fetch Context
+## 查上下文
 
-`context` uses `pack_id` and `pack_meta` from `search` output and fetches both previous and next logs by default.
+`context` 直接使用 `search` 输出里的 `pack_id` 和 `pack_meta`，默认同时查前文和后文。
 
-If your project root already has `.alilog.json`, `--project` and `--logstore` can be omitted. The fully explicit form is:
+如果项目根目录已经有 `.alilog.json`，那么 `--project` 和 `--logstore` 也可以省略。下面先给出最稳妥的显式写法：
 
 ```bash
 uv run alilog context \
@@ -136,59 +135,59 @@ uv run alilog context \
   --pack-meta '1|MTc2ODA0MTQzNjk1MDUwNzQwMQ==|54|6'
 ```
 
-## Development
+## 开发
 
-Install dependencies:
+安装开发依赖：
 
 ```bash
 uv sync --group dev
 ```
 
-Run tests:
+运行测试：
 
 ```bash
 uv run pytest -q
 ```
 
-Run lint:
+运行 lint：
 
 ```bash
 uv run ruff check .
 ```
 
-Run type checks:
+运行类型检查：
 
 ```bash
 uv run mypy
 ```
 
-CI runs Ruff, mypy, and the test suite on Python 3.10, 3.11, 3.12, and 3.13.
+CI 会在 Python 3.10、3.11、3.12、3.13 上运行 Ruff、mypy 和测试。
 
-## AI Skill Setup
+## AI Skill 安装
 
-This project supports Claude Code skills.
+这个项目支持 Claude Code skills。
 
-After installing `alilog`, install the Claude skill with:
+安装好 `alilog` 之后，可以直接执行：
 
 ```bash
 alilog install-skill
 ```
 
-If you want a single setup flow from GitHub on a new machine:
+如果是在新机器上，希望从 GitHub 一次完成工具安装再安装 skill，可以执行：
 
 ```bash
 uv tool install git+https://github.com/cp5670681/alilog.git
 alilog install-skill
 ```
 
-This writes the skill to `~/.claude/skills/alilog/SKILL.md`, which matches the Claude Code skills layout described in the official docs.
+这个命令会把 skill 写到 `~/.claude/skills/alilog/SKILL.md`，和 Claude Code 官方文档里的 skills 目录结构一致。
 
-Manual copy is also supported:
+也支持手动复制模板：
 
-- Copy `alilog/assets/claude-skill/SKILL.md` to `~/.claude/skills/alilog/SKILL.md`
+- 把 `alilog/assets/claude-skill/SKILL.md` 复制到 `~/.claude/skills/alilog/SKILL.md`
 
-The skill file itself includes instructions for installing `alilog` if the CLI is missing.
+这个 skill 文件里已经带了 `alilog` CLI 的安装说明；如果用户只复制了 skill，也能看到如何先安装工具。
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+MIT，见 [LICENSE](LICENSE)。

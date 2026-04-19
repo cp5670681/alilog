@@ -34,12 +34,12 @@ def invoke_cli(
     tmp_path: Path,
     project_root: Path,
     monkeypatch: pytest.MonkeyPatch,
-) -> Callable[[list[str]], Result]:
+) -> Callable[..., Result]:
     monkeypatch.setenv("HOME", str(tmp_path))
     monkeypatch.chdir(project_root)
 
-    def _invoke(args: list[str]) -> Result:
-        return runner.invoke(cli.cli, args)
+    def _invoke(args: list[str], input: str | None = None) -> Result:
+        return runner.invoke(cli.cli, args, input=input)
 
     return _invoke
 

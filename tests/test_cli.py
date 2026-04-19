@@ -7,6 +7,7 @@ from unittest.mock import MagicMock
 import pytest
 
 import alilog.usecases as usecases
+from alilog.models import AuthConfig
 
 
 def test_auth_save_writes_config_file(
@@ -31,6 +32,47 @@ def test_auth_save_requires_cookie(invoke_cli) -> None:
     assert "Cookie 为必填" in result.output
 
 
+def test_auth_login_captures_cookie_via_cdp(
+    invoke_cli,
+    config_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    called: dict[str, object] = {}
+
+    def fake_capture_auth_via_cdp(*, browser, login_url, confirm):
+        called["browser"] = browser
+        called["login_url"] = login_url
+        called["confirm_result"] = confirm()
+        return AuthConfig(
+            cookie="aliyun_lang=zh; session=value",
+            csrf_token="csrf-token",
+        )
+
+    monkeypatch.setattr(usecases, "capture_auth_via_cdp", fake_capture_auth_via_cdp)
+
+    result = invoke_cli(
+        [
+            "auth",
+            "login",
+            "--browser",
+            "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+        ],
+        input="\n",
+    )
+
+    assert result.exit_code == 0, result.output
+    saved = json.loads(config_path.read_text(encoding="utf-8"))
+    assert saved["cookie"] == "aliyun_lang=zh; session=value"
+    assert saved["csrf_token"] == "csrf-token"
+    assert (
+        called["browser"]
+        == "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+    )
+    assert called["login_url"] == "https://sls.console.aliyun.com/lognext/"
+    assert called["confirm_result"] == ""
+    assert "已同时提取 csrf token" in result.output
+
+
 def test_auth_save_clears_stale_csrf_when_only_cookie_is_updated(
     invoke_cli,
     config_path: Path,
@@ -45,18 +87,6 @@ def test_auth_save_clears_stale_csrf_when_only_cookie_is_updated(
     assert result.exit_code == 0, result.output
     saved = json.loads(config_path.read_text(encoding="utf-8"))
     assert saved == {"cookie": "new-cookie"}
-
-
-def test_auth_clear_removes_config_file(
-    invoke_cli,
-    config_path: Path,
-) -> None:
-    config_path.write_text('{"cookie":"cookie=value"}', encoding="utf-8")
-
-    result = invoke_cli(["auth", "clear"])
-
-    assert result.exit_code == 0, result.output
-    assert not config_path.exists()
 
 
 def test_auth_save_ignores_invalid_project_config(

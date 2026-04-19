@@ -1,3 +1,13 @@
+"""
+配置文件管理模块。
+
+本模块负责管理 alilog 的配置文件，包括：
+- 全局认证配置（~/.alilog.json）：存储 Cookie 和 CSRF Token
+- 项目配置（项目根目录的 .alilog.json）：存储项目名称和日志库配置
+
+配置文件采用 JSON 格式，支持原子写入以确保配置安全。
+"""
+
 from __future__ import annotations
 
 import json
@@ -11,10 +21,28 @@ DEFAULT_CONFIG_NAME = ".alilog.json"
 
 
 def resolve_config_path() -> Path:
+    """解析全局配置文件路径。
+
+    Returns:
+        全局配置文件的完整路径，位于用户主目录下。
+    """
     return Path.home() / DEFAULT_CONFIG_NAME
 
 
 def load_auth_config(path: Path) -> AuthConfig:
+    """加载认证配置。
+
+    从指定路径读取 JSON 配置文件并解析为 AuthConfig 对象。
+
+    Args:
+        path: 配置文件路径
+
+    Returns:
+        解析后的认证配置对象
+
+    Raises:
+        AliLogError: 配置文件读取失败、JSON 格式错误或字段类型错误
+    """
     if not path.exists():
         return AuthConfig()
     try:
@@ -37,6 +65,16 @@ def load_auth_config(path: Path) -> AuthConfig:
 
 
 def find_project_config_path(start: Path | None = None) -> Path | None:
+    """查找项目配置文件路径。
+
+    从指定目录开始向上搜索，直到找到 .alilog.json 文件或到达用户主目录。
+
+    Args:
+        start: 搜索起始目录，默认为当前工作目录
+
+    Returns:
+        找到的配置文件路径，未找到则返回 None
+    """
     current = (start or Path.cwd()).resolve()
     home = Path.home().resolve()
     for directory in (current, *current.parents):
@@ -49,6 +87,19 @@ def find_project_config_path(start: Path | None = None) -> Path | None:
 
 
 def load_project_config(path: Path | None) -> ProjectConfig:
+    """加载项目配置。
+
+    从指定路径读取 JSON 配置文件并解析为 ProjectConfig 对象。
+
+    Args:
+        path: 配置文件路径，可以为 None
+
+    Returns:
+        解析后的项目配置对象，路径为 None 时返回空配置
+
+    Raises:
+        AliLogError: 配置文件读取失败、JSON 格式错误或字段类型错误
+    """
     if path is None or not path.exists():
         return ProjectConfig()
     try:
@@ -87,6 +138,18 @@ def load_project_config(path: Path | None) -> ProjectConfig:
 
 
 def save_auth_config(path: Path, config: AuthConfig) -> None:
+    """保存认证配置。
+
+    将认证配置以 JSON 格式原子写入指定路径。使用临时文件和原子替换
+    确保写入安全，并设置文件权限为 600 以保护敏感信息。
+
+    Args:
+        path: 配置文件保存路径
+        config: 要保存的认证配置对象
+
+    Raises:
+        AliLogError: 写入配置文件失败
+    """
     path.parent.mkdir(parents=True, exist_ok=True)
     payload = {
         key: value
@@ -115,12 +178,3 @@ def save_auth_config(path: Path, config: AuthConfig) -> None:
         except OSError:
             pass
         raise
-
-
-def clear_auth_config(path: Path) -> None:
-    try:
-        path.unlink()
-    except FileNotFoundError:
-        return
-    except OSError as exc:
-        raise AliLogError(f"删除配置文件失败: {path}") from exc
