@@ -145,7 +145,7 @@ alilog context \
 ### 4. 保存认证信息
 
 ```bash
-alilog auth save --cookie 'aliyun_lang=zh; ...' --csrf-token 'f11fea43'
+alilog auth save --cookie 'aliyun_lang=zh; ...' --csrf-token 'xxxxxxxx'
 ```
 
 ## 何时需要补问用户

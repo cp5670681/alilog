@@ -4,8 +4,6 @@ English | [简体中文](README.md)
 
 `alilog` is an unofficial command-line tool for querying Alibaba Cloud SLS console logs and retrieving log context around a selected record.
 
-Status: experimental
-
 ## Why This Project Exists
 
 This project keeps a narrow CLI surface for two common workflows:
@@ -17,8 +15,6 @@ This project keeps a narrow CLI surface for two common workflows:
 
 - This tool depends on an Alibaba Cloud Console login session.
 - Authentication is based on browser cookies, so it is intended for local, trusted machines only.
-- The project is not affiliated with Alibaba Cloud.
-- Console APIs may change without notice.
 
 ## Requirements
 
@@ -34,40 +30,7 @@ uv tool install git+https://github.com/cp5670681/alilog.git
 alilog --help
 ```
 
-For local development or running directly from a repository checkout:
-
-```bash
-uv sync
-uv run alilog --help
-```
-
-## Authentication
-
-The CLI reads credentials from:
-
-```text
-~/.alilog.json
-```
-
-The repository-level defaults are read from the nearest project-root `.alilog.json` found by walking upward from the current working directory. This file is intended for non-secret defaults such as:
-
-```json
-{
-  "project": "k8s-log-c19af6eaf83e44c28a7eb544564eee247",
-  "default_logstore": "research",
-  "logstores": ["research", "research-sidekiq-default"]
-}
-```
-
-Save the cookie and csrf-token from your browser session:
-
-```bash
-alilog auth save \
-  --cookie 'aliyun_lang=zh; ...' \
-  --csrf-token 'f11fea43'
-```
-
-Or let `alilog` launch a browser, complete the login manually, and then capture the cookie automatically:
+## Login
 
 ```bash
 alilog auth login
@@ -80,6 +43,26 @@ alilog auth login \
   --browser '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
 ```
 
+Or manually save the cookie and csrf-token (can be obtained via packet capture):
+
+```bash
+alilog auth save \
+  --cookie 'aliyun_lang=zh; ...' \
+  --csrf-token 'xxxxxxxx'
+```
+
+# Project-level Configuration
+
+Project-level configuration is read from the nearest project-root `.alilog.json` found by walking upward from the current working directory.
+
+```json
+{
+  "project": "k8s-log-c19af6eaf83e44c28a7eb544564eee247",
+  "default_logstore": "research",
+  "logstores": ["research", "research-sidekiq-default"]
+}
+```
+
 ## Search Logs
 
 `search` accepts:
@@ -88,8 +71,6 @@ alilog auth login \
 - ISO timestamps
 - `YYYY-MM-DD HH:MM[:SS]`
 - relative windows via `--last`
-
-The query automatically appends `with_pack_meta`, so the output can be passed into `context`.
 
 If the current project already has `.alilog.json`, `--project` and `--logstore` are optional:
 
@@ -125,7 +106,7 @@ uv run alilog search \
 
 `context` uses `pack_id` and `pack_meta` from `search` output and fetches both previous and next logs by default.
 
-If your project root already has `.alilog.json`, `--project` and `--logstore` can be omitted. The fully explicit form is:
+Similarly, if your project root already has `.alilog.json`, `--project` and `--logstore` can be omitted. The full form is:
 
 ```bash
 uv run alilog context \
@@ -180,7 +161,7 @@ uv tool install git+https://github.com/cp5670681/alilog.git
 alilog install-skill
 ```
 
-This writes the skill to `~/.claude/skills/alilog/SKILL.md`, which matches the Claude Code skills layout described in the official docs.
+This writes the skill to `~/.claude/skills/alilog/SKILL.md`.
 
 Manual copy is also supported:
 

@@ -4,8 +4,6 @@
 
 `alilog` 是一个非官方的阿里云 SLS Console 命令行工具，用于查询日志，并基于某条日志继续获取上下文。
 
-Status: experimental
-
 ## 项目定位
 
 这个项目只保留两条核心链路：
@@ -17,8 +15,6 @@ Status: experimental
 
 - 这个工具依赖阿里云登录态。
 - 认证基于浏览器 Cookie，只建议在本机和受信任环境使用。
-- 本项目与阿里云无官方关联。
-- Console API 可能随时变化。
 
 ## 环境要求
 
@@ -34,40 +30,7 @@ uv tool install git+https://github.com/cp5670681/alilog.git
 alilog --help
 ```
 
-对于本地开发或直接从仓库运行：
-
-```bash
-uv sync
-uv run alilog --help
-```
-
-## 认证
-
-CLI 默认从下面的文件读取认证信息：
-
-```text
-~/.alilog.json
-```
-
-项目级默认值会从当前工作目录向上查找最近的项目根目录 `.alilog.json`。这个文件适合存放非敏感默认值，比如：
-
-```json
-{
-  "project": "k8s-log-c19af6eaf83e44c28a7eb544564eee247",
-  "default_logstore": "research",
-  "logstores": ["research", "research-sidekiq-default"]
-}
-```
-
-保存浏览器登录后的Cookie以及csrf-token：
-
-```bash
-alilog auth save \
-  --cookie 'aliyun_lang=zh; ...' \
-  --csrf-token 'f11fea43'
-```
-
-也可以让 `alilog` 启动一个浏览器，手动完成登录后自动提取 Cookie：
+## 登录
 
 ```bash
 alilog auth login
@@ -80,6 +43,25 @@ alilog auth login \
   --browser '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
 ```
 
+或者手动保存cookie和csrf-token(可通过抓包获取):
+
+```bash
+alilog auth save \
+  --cookie 'aliyun_lang=zh; ...' \
+  --csrf-token 'xxxxxxxx'
+```
+
+# 项目级配置
+项目级配置默认会从当前工作目录向上查找最近的项目根目录的 `.alilog.json`。
+
+```json
+{
+  "project": "k8s-log-c19af6eaf83e44c28a7eb544564eee247",
+  "default_logstore": "research",
+  "logstores": ["research", "research-sidekiq-default"]
+}
+```
+
 ## 查日志
 
 `search` 支持：
@@ -88,8 +70,6 @@ alilog auth login \
 - ISO 时间
 - `YYYY-MM-DD HH:MM[:SS]`
 - 相对时间窗口 `--last`
-
-查询语句会自动追加 `with_pack_meta`，结果可以直接用于 `context`。
 
 如果当前项目已经有 `.alilog.json`，那么 `--project` 和 `--logstore` 可以省略：
 
@@ -125,7 +105,7 @@ uv run alilog search \
 
 `context` 直接使用 `search` 输出里的 `pack_id` 和 `pack_meta`，默认同时查前文和后文。
 
-如果项目根目录已经有 `.alilog.json`，那么 `--project` 和 `--logstore` 也可以省略。下面先给出最稳妥的显式写法：
+同理，如果项目根目录已经有 `.alilog.json`，那么 `--project` 和 `--logstore` 也可以省略。下面先给出完整写法：
 
 ```bash
 uv run alilog context \
@@ -180,7 +160,7 @@ uv tool install git+https://github.com/cp5670681/alilog.git
 alilog install-skill
 ```
 
-这个命令会把 skill 写到 `~/.claude/skills/alilog/SKILL.md`，和 Claude Code 官方文档里的 skills 目录结构一致。
+这个命令会把 skill 写到 `~/.claude/skills/alilog/SKILL.md`。
 
 也支持手动复制模板：
 
