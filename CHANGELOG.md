@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-04-19
+
+### Added
+
+- `auth login` command for automatic browser authentication via Chrome DevTools Protocol (CDP)
+  - Extracts cookies and CSRF token from an already logged-in browser
+  - Supports Chrome, Edge, and other Chromium-based browsers
+  - Interactive confirmation before saving credentials
+- `websocket-client` dependency for CDP communication
+
+### Changed
+
+- Time parsing now supports 13-digit millisecond timestamps (e.g., `1776352860000`)
+- README restructured with separate English (`README.en.md`) and Chinese (`README.md`) versions
+
 ## [0.2.0] - 2026-04-17
 
 ### Added
