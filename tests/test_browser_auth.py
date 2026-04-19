@@ -103,7 +103,10 @@ def test_managed_browser_starts_with_remote_allow_origins(
         "alilog.browser_auth.subprocess.Popen",
         lambda command, stdout, stderr: commands.append(command) or StubProcess(),
     )
-    monkeypatch.setattr("alilog.browser_auth.wait_for_debugger", lambda *args, **kwargs: None)
+    monkeypatch.setattr(
+        "alilog.browser_auth.wait_for_debugger",
+        lambda *args, **kwargs: None,
+    )
 
     managed_browser = ManagedBrowser(browser=None, login_url="https://example.com")
     managed_browser.start()
