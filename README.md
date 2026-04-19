@@ -74,7 +74,7 @@ alilog auth save \
 如果当前项目已经有 `.alilog.json`，那么 `--project` 和 `--logstore` 可以省略：
 
 ```bash
-uv run alilog search \
+alilog search \
   --from '2026-04-16 23:06:00' \
   --to '2026-04-16 23:21:00' \
   --query 'error'
@@ -83,7 +83,7 @@ uv run alilog search \
 如果需要，也可以继续显式覆盖：
 
 ```bash
-uv run alilog search \
+alilog search \
   --project k8s-log-c19af6eaf83e44c28a7eb544564eee247 \
   --logstore research \
   --from '2026-04-16 23:06:00' \
@@ -94,7 +94,7 @@ uv run alilog search \
 相对时间窗口示例：
 
 ```bash
-uv run alilog search \
+alilog search \
   --project k8s-log-c19af6eaf83e44c28a7eb544564eee247 \
   --logstore research \
   --last 15m \
@@ -108,7 +108,7 @@ uv run alilog search \
 同理，如果项目根目录已经有 `.alilog.json`，那么 `--project` 和 `--logstore` 也可以省略。下面先给出完整写法：
 
 ```bash
-uv run alilog context \
+alilog context \
   --project k8s-log-c19af6eaf83e44c28a7eb544564eee247 \
   --logstore research \
   --pack-id EBA5D6B0CB95EA56-F3 \

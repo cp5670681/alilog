@@ -75,7 +75,7 @@ Project-level configuration is read from the nearest project-root `.alilog.json`
 If the current project already has `.alilog.json`, `--project` and `--logstore` are optional:
 
 ```bash
-uv run alilog search \
+alilog search \
   --from '2026-04-16 23:06:00' \
   --to '2026-04-16 23:21:00' \
   --query 'error'
@@ -84,7 +84,7 @@ uv run alilog search \
 You can still override them explicitly when needed:
 
 ```bash
-uv run alilog search \
+alilog search \
   --project k8s-log-c19af6eaf83e44c28a7eb544564eee247 \
   --logstore research \
   --from '2026-04-16 23:06:00' \
@@ -95,7 +95,7 @@ uv run alilog search \
 Relative window example:
 
 ```bash
-uv run alilog search \
+alilog search \
   --project k8s-log-c19af6eaf83e44c28a7eb544564eee247 \
   --logstore research \
   --last 15m \
@@ -109,7 +109,7 @@ uv run alilog search \
 Similarly, if your project root already has `.alilog.json`, `--project` and `--logstore` can be omitted. The full form is:
 
 ```bash
-uv run alilog context \
+alilog context \
   --project k8s-log-c19af6eaf83e44c28a7eb544564eee247 \
   --logstore research \
   --pack-id EBA5D6B0CB95EA56-F3 \
