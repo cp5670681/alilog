@@ -30,6 +30,18 @@ uv tool install git+https://github.com/cp5670681/alilog.git
 alilog --help
 ```
 
+如果你就在本地仓库目录里，也可以直接安装当前工作区版本：
+
+```bash
+uv tool install .
+alilog --help
+```
+
+升级命令：
+
+- 本地仓库安装：`uv tool install . --reinstall`
+- GitHub 安装：`uv tool upgrade alilog`
+
 ## 登录
 
 ```bash

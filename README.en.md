@@ -30,6 +30,18 @@ uv tool install git+https://github.com/cp5670681/alilog.git
 alilog --help
 ```
 
+If you are already in the local repository, you can also install the current workspace version directly:
+
+```bash
+uv tool install .
+alilog --help
+```
+
+Upgrade commands:
+
+- Local repository install: `uv tool install . --reinstall`
+- GitHub install: `uv tool upgrade alilog`
+
 ## Login
 
 ```bash
