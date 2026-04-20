@@ -11,7 +11,7 @@ from alilog.config import (
     load_project_config,
     save_auth_config,
 )
-from alilog.models import AliLogError, AuthConfig
+from alilog.models import AliLogError, AuthConfig, LogstoreRule
 
 
 def test_save_and_load_auth_config(tmp_path: Path) -> None:
@@ -45,7 +45,23 @@ def test_load_project_config_reads_expected_fields(tmp_path: Path) -> None:
             {
                 "project": "project-a",
                 "default_logstore": "research",
-                "logstores": ["research", "nginx", "app"],
+                "logstore_rules": [
+                    {
+                        "logstore": "research",
+                        "command": "bundle exec puma -C config/puma.rb",
+                        "description": "Rails Web 服务",
+                    },
+                    {
+                        "logstore": "nginx",
+                        "command": "nginx -g daemon off;",
+                        "description": "Nginx 入口流量",
+                    },
+                    {
+                        "logstore": "app",
+                        "command": "bundle exec sidekiq -C config/sidekiq.yml",
+                        "description": "通用异步任务",
+                    },
+                ],
             }
         ),
         encoding="utf-8",
@@ -55,10 +71,26 @@ def test_load_project_config_reads_expected_fields(tmp_path: Path) -> None:
 
     assert config.project == "project-a"
     assert config.default_logstore == "research"
-    assert config.logstores == ("research", "nginx", "app")
+    assert config.logstore_rules == (
+        LogstoreRule(
+            logstore="research",
+            command="bundle exec puma -C config/puma.rb",
+            description="Rails Web 服务",
+        ),
+        LogstoreRule(
+            logstore="nginx",
+            command="nginx -g daemon off;",
+            description="Nginx 入口流量",
+        ),
+        LogstoreRule(
+            logstore="app",
+            command="bundle exec sidekiq -C config/sidekiq.yml",
+            description="通用异步任务",
+        ),
+    )
 
 
-def test_load_project_config_rejects_default_logstore_not_in_logstores(
+def test_load_project_config_rejects_default_logstore_not_in_logstore_rules(
     tmp_path: Path,
 ) -> None:
     path = tmp_path / ".alilog.json"
@@ -67,7 +99,42 @@ def test_load_project_config_rejects_default_logstore_not_in_logstores(
             {
                 "project": "project-a",
                 "default_logstore": "research",
-                "logstores": ["nginx", "app"],
+                "logstore_rules": [
+                    {
+                        "logstore": "nginx",
+                        "command": "nginx -g daemon off;",
+                        "description": "Nginx 入口流量",
+                    },
+                    {
+                        "logstore": "app",
+                        "command": "bundle exec sidekiq -C config/sidekiq.yml",
+                        "description": "通用异步任务",
+                    },
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(AliLogError):
+        load_project_config(path)
+
+
+def test_load_project_config_rejects_invalid_logstore_rule_shape(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / ".alilog.json"
+    path.write_text(
+        json.dumps(
+            {
+                "project": "project-a",
+                "logstore_rules": [
+                    {
+                        "logstore": "research",
+                        "command": "bundle exec puma -C config/puma.rb",
+                        "description": 123,
+                    }
+                ],
             }
         ),
         encoding="utf-8",

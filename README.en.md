@@ -59,9 +59,22 @@ Project-level configuration is read from the nearest project-root `.alilog.json`
 {
   "project": "k8s-log-c19af6eaf83e44c28a7eb544564eee247",
   "default_logstore": "research",
-  "logstores": ["research", "research-sidekiq-default"]
+  "logstore_rules": [
+    {
+      "logstore": "research",
+      "command": "./bin/start-web --config ./config/web.yaml",
+      "description": "Primary web service"
+    },
+    {
+      "logstore": "research-worker-default",
+      "command": "./bin/start-worker --config ./config/worker-default.yaml",
+      "description": "Default background jobs"
+    }
+  ]
 }
 ```
+
+`default_logstore` is still used as the CLI fallback. `logstore_rules` documents which runtime entrypoint or code path maps to which logstore.
 
 ## Search Logs
 

@@ -64,12 +64,29 @@ class ProjectConfig:
     Attributes:
         project: 阿里云 SLS 项目名称
         default_logstore: 默认的日志库名称
-        logstores: 可用的日志库列表
+        logstore_rules: 日志库规则列表
     """
 
     project: str | None = None
     default_logstore: str | None = None
-    logstores: tuple[str, ...] = ()
+    logstore_rules: tuple["LogstoreRule", ...] = ()
+
+
+@dataclass(frozen=True)
+class LogstoreRule:
+    """日志库规则。
+
+    用于描述某个进程/命令对应的日志库，帮助从代码运行入口映射到日志来源。
+
+    Attributes:
+        logstore: 日志库名称
+        command: 对应的启动命令或入口命令
+        description: 规则说明
+    """
+
+    logstore: str
+    command: str
+    description: str
 
 
 @dataclass(frozen=True)

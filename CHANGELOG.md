@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-04-20
+
+### Added
+
+- Project-level `logstore_rules` metadata for describing which runtime entrypoint maps to which logstore
+
+### Changed
+
+- Project config parsing now reads structured `logstore_rules` entries alongside `default_logstore`
+- Claude skill guidance now tells AI agents to prefer project-level `logstore_rules` when choosing a logstore and falls back to `default_logstore` only when no stronger runtime clue is available
+- README examples now show the `logstore_rules` structure in both English and Chinese documentation
+
 ## [0.3.0] - 2026-04-19
 
 ### Added

@@ -10,6 +10,32 @@ import alilog.usecases as usecases
 from alilog.models import AuthConfig
 
 
+def build_project_config(*, default_logstore: str | None = "research") -> str:
+    payload: dict[str, object] = {
+        "project": "project-a",
+        "logstore_rules": [
+            {
+                "logstore": "research",
+                "command": "bundle exec puma -C config/puma.rb",
+                "description": "Rails Web 服务",
+            },
+            {
+                "logstore": "nginx",
+                "command": "nginx -g daemon off;",
+                "description": "Nginx 入口流量",
+            },
+            {
+                "logstore": "app",
+                "command": "bundle exec sidekiq -C config/sidekiq.yml",
+                "description": "通用异步任务",
+            },
+        ],
+    }
+    if default_logstore is not None:
+        payload["default_logstore"] = default_logstore
+    return json.dumps(payload, ensure_ascii=False)
+
+
 def test_auth_save_writes_config_file(
     invoke_cli,
     config_path: Path,
@@ -134,9 +160,7 @@ def test_context_always_calls_prev_and_next(
         },
     ]
     save_auth()
-    save_project_config(
-        '{"project":"project-a","default_logstore":"research","logstores":["research","nginx","app"]}'
-    )
+    save_project_config(build_project_config())
     monkeypatch.setattr(usecases, "get_client", lambda runtime: fake_client)
 
     result = invoke_cli(
@@ -167,9 +191,7 @@ def test_search_uses_auth_from_default_config(
         "data": [{"__time__": 1776352860, "content": "hello"}],
     }
     save_auth()
-    save_project_config(
-        '{"project":"project-a","default_logstore":"research","logstores":["research","nginx","app"]}'
-    )
+    save_project_config(build_project_config())
     monkeypatch.setattr(usecases, "get_client", lambda runtime: fake_client)
 
     result = invoke_cli(
@@ -199,9 +221,7 @@ def test_search_accepts_last_with_empty_query(
     fake_client = MagicMock()
     fake_client.search_logs.return_value = {"meta": {"count": 0}, "data": []}
     save_auth()
-    save_project_config(
-        '{"project":"project-a","default_logstore":"research","logstores":["research","nginx","app"]}'
-    )
+    save_project_config(build_project_config())
     monkeypatch.setattr(usecases, "get_client", lambda runtime: fake_client)
 
     result = invoke_cli(
@@ -232,9 +252,7 @@ def test_explicit_project_and_logstore_override_project_config(
     fake_client = MagicMock()
     fake_client.search_logs.return_value = {"meta": {"count": 0}, "data": []}
     save_auth()
-    save_project_config(
-        '{"project":"project-a","default_logstore":"research","logstores":["research","nginx","app"]}'
-    )
+    save_project_config(build_project_config())
     monkeypatch.setattr(usecases, "get_client", lambda runtime: fake_client)
 
     result = invoke_cli(
@@ -326,7 +344,7 @@ def test_search_requires_logstore_when_project_config_missing_default_logstore(
 ) -> None:
     fake_client = MagicMock()
     save_auth()
-    save_project_config('{"project":"project-a","logstores":["research","nginx","app"]}')
+    save_project_config(build_project_config(default_logstore=None))
     monkeypatch.setattr(usecases, "get_client", lambda runtime: fake_client)
 
     result = invoke_cli(
@@ -351,9 +369,7 @@ def test_search_rejects_non_positive_pagination_values(
     option: str,
     save_project_config,
 ) -> None:
-    save_project_config(
-        '{"project":"project-a","default_logstore":"research","logstores":["research","nginx","app"]}'
-    )
+    save_project_config(build_project_config())
     result = invoke_cli(
         [
             "search",
@@ -373,9 +389,7 @@ def test_search_rejects_non_positive_pagination_values(
 
 
 def test_context_rejects_non_positive_size(invoke_cli, save_project_config) -> None:
-    save_project_config(
-        '{"project":"project-a","default_logstore":"research","logstores":["research","nginx","app"]}'
-    )
+    save_project_config(build_project_config())
     result = invoke_cli(
         [
             "context",

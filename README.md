@@ -58,9 +58,22 @@ alilog auth save \
 {
   "project": "k8s-log-c19af6eaf83e44c28a7eb544564eee247",
   "default_logstore": "research",
-  "logstores": ["research", "research-sidekiq-default"]
+  "logstore_rules": [
+    {
+      "logstore": "research",
+      "command": "./bin/start-web --config ./config/web.yaml",
+      "description": "主 Web 服务"
+    },
+    {
+      "logstore": "research-worker-default",
+      "command": "./bin/start-worker --config ./config/worker-default.yaml",
+      "description": "默认队列后台任务"
+    }
+  ]
 }
 ```
+
+`default_logstore` 仍用于命令行默认值；`logstore_rules` 用来描述“哪个启动入口/代码职责会把日志打到哪个 logstore”。
 
 ## 查日志
 
