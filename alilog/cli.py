@@ -258,8 +258,6 @@ def install_skill_command() -> None:
     """
     path = install_skill()
     click.echo(f"已安装 Claude skill: {path}")
-    click.echo("如果当前机器还没有安装 alilog CLI，可执行:")
-    click.echo(f"  uv tool install {INSTALL_REPO_URL}")
 
 
 def main() -> None:
