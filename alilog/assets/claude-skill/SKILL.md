@@ -174,6 +174,12 @@ alilog auth save --help
 
 ### 1. 查日志
 
+查询语句约束：
+
+- 不要在 `--query` 里直接包含 `/`。
+- 如果用户输入里有类似 `api/create/999` 这种路径式关键词，需要拆成多个词并用 `and` 连接，例如：`api and create and 999`
+- 如果用户要做“或”查询，用 `or` 连接多个词，例如：`api or create or 999`
+
 如果任务没有提供额外代码线索，且项目配置里已经有默认 `project` 和 `default_logstore`，优先使用简写：
 
 ```bash
