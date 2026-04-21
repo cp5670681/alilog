@@ -1,7 +1,6 @@
 ---
 name: alilog
 description: 当你想查询阿里云 SLS Console 日志、获取某条日志的上下文，或通过 alilog CLI 管理本地认证信息时，使用这个 skill。
-disable-model-invocation: true
 argument-hint: search|context|auth，后面跟正常参数或任务描述
 allowed-tools: Bash(alilog:*), Bash(which alilog), Bash(uv tool install:*), Bash(pwd), Bash(rg:*), Bash(cat:*), Bash(sed:*), Bash(ls:*)
 ---
