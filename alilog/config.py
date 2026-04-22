@@ -2,8 +2,8 @@
 配置文件管理模块。
 
 本模块负责管理 alilog 的配置文件，包括：
-- 全局认证配置（~/.alilog.json）：存储 Cookie 和 CSRF Token
-- 项目配置（项目根目录的 .alilog.json）：存储项目名称和日志库规则配置
+- 全局认证配置（~/.alilog/auth.json）：存储 Cookie 和 CSRF Token
+- 默认项目配置（~/.alilog/settings.json）：存储默认项目和默认日志库
 
 配置文件采用 JSON 格式，支持原子写入以确保配置安全。
 """
@@ -15,18 +15,29 @@ import os
 import tempfile
 from pathlib import Path
 
-from .models import AliLogError, AuthConfig, LogstoreRule, ProjectConfig
+from .models import AliLogError, AuthConfig, ProjectConfig
 
-DEFAULT_CONFIG_NAME = ".alilog.json"
+CONFIG_DIR_NAME = ".alilog"
+AUTH_CONFIG_NAME = "auth.json"
+PROJECT_CONFIG_NAME = "settings.json"
 
 
-def resolve_config_path() -> Path:
-    """解析全局配置文件路径。
+def resolve_auth_config_path() -> Path:
+    """解析全局认证配置文件路径。
 
     Returns:
-        全局配置文件的完整路径，位于用户主目录下。
+        全局认证配置文件的完整路径，位于用户主目录下。
     """
-    return Path.home() / DEFAULT_CONFIG_NAME
+    return Path.home() / CONFIG_DIR_NAME / AUTH_CONFIG_NAME
+
+
+def resolve_project_config_path() -> Path:
+    """解析默认项目配置文件路径。
+
+    Returns:
+        默认项目配置文件的完整路径，位于用户主目录下。
+    """
+    return Path.home() / CONFIG_DIR_NAME / PROJECT_CONFIG_NAME
 
 
 def load_auth_config(path: Path) -> AuthConfig:
@@ -64,43 +75,21 @@ def load_auth_config(path: Path) -> AuthConfig:
     return AuthConfig(cookie=cookie, csrf_token=csrf_token)
 
 
-def find_project_config_path(start: Path | None = None) -> Path | None:
-    """查找项目配置文件路径。
-
-    从指定目录开始向上搜索，直到找到 .alilog.json 文件或到达用户主目录。
-
-    Args:
-        start: 搜索起始目录，默认为当前工作目录
-
-    Returns:
-        找到的配置文件路径，未找到则返回 None
-    """
-    current = (start or Path.cwd()).resolve()
-    home = Path.home().resolve()
-    for directory in (current, *current.parents):
-        if directory == home:
-            continue
-        candidate = directory / DEFAULT_CONFIG_NAME
-        if candidate.exists():
-            return candidate
-    return None
-
-
-def load_project_config(path: Path | None) -> ProjectConfig:
+def load_project_config(path: Path) -> ProjectConfig:
     """加载项目配置。
 
     从指定路径读取 JSON 配置文件并解析为 ProjectConfig 对象。
 
     Args:
-        path: 配置文件路径，可以为 None
+        path: 配置文件路径
 
     Returns:
-        解析后的项目配置对象，路径为 None 时返回空配置
+        解析后的项目配置对象，路径不存在时返回空配置
 
     Raises:
         AliLogError: 配置文件读取失败、JSON 格式错误或字段类型错误
     """
-    if path is None or not path.exists():
+    if not path.exists():
         return ProjectConfig()
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
@@ -113,60 +102,17 @@ def load_project_config(path: Path | None) -> ProjectConfig:
     if not isinstance(payload, dict):
         raise AliLogError(f"项目配置文件格式无效: {path}")
 
-    project = payload.get("project")
+    default_project = payload.get("default_project")
     default_logstore = payload.get("default_logstore")
-    logstore_rules = payload.get("logstore_rules", [])
 
-    if project is not None and not isinstance(project, str):
-        raise AliLogError(f"项目配置中的 project 必须是字符串: {path}")
+    if default_project is not None and not isinstance(default_project, str):
+        raise AliLogError(f"项目配置中的 default_project 必须是字符串: {path}")
     if default_logstore is not None and not isinstance(default_logstore, str):
         raise AliLogError(f"项目配置中的 default_logstore 必须是字符串: {path}")
-    if not isinstance(logstore_rules, list):
-        raise AliLogError(f"项目配置中的 logstore_rules 必须是对象数组: {path}")
-
-    parsed_rules: list[LogstoreRule] = []
-    for index, item in enumerate(logstore_rules, start=1):
-        if not isinstance(item, dict):
-            raise AliLogError(
-                f"项目配置中的 logstore_rules 第 {index} 项必须是对象: {path}"
-            )
-        logstore = item.get("logstore")
-        command = item.get("command")
-        description = item.get("description")
-        if not isinstance(logstore, str):
-            raise AliLogError(
-                "项目配置中的 logstore_rules 第 "
-                f"{index} 项 logstore 必须是字符串: {path}"
-            )
-        if not isinstance(command, str):
-            raise AliLogError(
-                "项目配置中的 logstore_rules 第 "
-                f"{index} 项 command 必须是字符串: {path}"
-            )
-        if not isinstance(description, str):
-            raise AliLogError(
-                "项目配置中的 logstore_rules 第 "
-                f"{index} 项 description 必须是字符串: {path}"
-            )
-        parsed_rules.append(
-            LogstoreRule(
-                logstore=logstore,
-                command=command,
-                description=description,
-            )
-        )
-
-    if default_logstore and parsed_rules and default_logstore not in {
-        rule.logstore for rule in parsed_rules
-    }:
-        raise AliLogError(
-            f"项目配置中的 default_logstore 必须存在于 logstore_rules 中: {path}"
-        )
 
     return ProjectConfig(
-        project=project,
+        default_project=default_project,
         default_logstore=default_logstore,
-        logstore_rules=tuple(parsed_rules),
     )
 
 

@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Moved runtime configuration into `~/.alilog/`
+- Renamed the auth file from `~/.alilog.json` to `~/.alilog/auth.json`
+- Replaced project-root `.alilog.json` discovery with `~/.alilog/settings.json`
+- Simplified the default project config shape to `default_project` and `default_logstore`
+
 ### Removed
 
 - `install-skill` command and `skills` module (skill is now managed separately)

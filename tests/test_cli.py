@@ -12,24 +12,7 @@ from alilog.models import AuthConfig
 
 def build_project_config(*, default_logstore: str | None = "research") -> str:
     payload: dict[str, object] = {
-        "project": "project-a",
-        "logstore_rules": [
-            {
-                "logstore": "research",
-                "command": "bundle exec puma -C config/puma.rb",
-                "description": "Rails Web 服务",
-            },
-            {
-                "logstore": "nginx",
-                "command": "nginx -g daemon off;",
-                "description": "Nginx 入口流量",
-            },
-            {
-                "logstore": "app",
-                "command": "bundle exec sidekiq -C config/sidekiq.yml",
-                "description": "通用异步任务",
-            },
-        ],
+        "default_project": "project-a",
     }
     if default_logstore is not None:
         payload["default_logstore"] = default_logstore
@@ -103,6 +86,7 @@ def test_auth_save_clears_stale_csrf_when_only_cookie_is_updated(
     invoke_cli,
     config_path: Path,
 ) -> None:
+    config_path.parent.mkdir(parents=True, exist_ok=True)
     config_path.write_text(
         '{"cookie":"old-cookie","csrf_token":"old-csrf"}',
         encoding="utf-8",
@@ -117,9 +101,11 @@ def test_auth_save_clears_stale_csrf_when_only_cookie_is_updated(
 
 def test_auth_save_ignores_invalid_project_config(
     invoke_cli,
-    project_root: Path,
+    tmp_path: Path,
 ) -> None:
-    (project_root / ".alilog.json").write_text("{bad json", encoding="utf-8")
+    config_path = tmp_path / ".alilog" / "settings.json"
+    config_path.parent.mkdir(parents=True, exist_ok=True)
+    config_path.write_text("{bad json", encoding="utf-8")
 
     result = invoke_cli(["auth", "save", "--cookie", "cookie=value"])
 
@@ -280,13 +266,15 @@ def test_explicit_project_and_logstore_override_project_config(
 def test_search_with_explicit_project_and_logstore_ignores_invalid_project_config(
     invoke_cli,
     monkeypatch: pytest.MonkeyPatch,
-    project_root: Path,
     save_auth,
+    tmp_path: Path,
 ) -> None:
     fake_client = MagicMock()
     fake_client.search_logs.return_value = {"meta": {"count": 0}, "data": []}
     save_auth()
-    (project_root / ".alilog.json").write_text("{bad json", encoding="utf-8")
+    config_path = tmp_path / ".alilog" / "settings.json"
+    config_path.parent.mkdir(parents=True, exist_ok=True)
+    config_path.write_text("{bad json", encoding="utf-8")
     monkeypatch.setattr(usecases, "get_client", lambda runtime: fake_client)
 
     result = invoke_cli(

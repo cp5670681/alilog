@@ -17,10 +17,10 @@ from collections.abc import Callable
 from .browser_auth import DEFAULT_LOGIN_URL, capture_auth_via_cdp
 from .client import AliyunSLSClient
 from .config import (
-    find_project_config_path,
     load_auth_config,
     load_project_config,
-    resolve_config_path,
+    resolve_auth_config_path,
+    resolve_project_config_path,
     save_auth_config,
 )
 from .inputs import ensure_with_pack_meta, parse_pack_meta, resolve_search_window
@@ -35,9 +35,9 @@ def load_runtime() -> RuntimeOptions:
     Returns:
         包含所有运行时配置的 RuntimeOptions 对象
     """
-    config_path = resolve_config_path()
+    config_path = resolve_auth_config_path()
     stored_auth = load_auth_config(config_path)
-    project_config_path = find_project_config_path()
+    project_config_path = resolve_project_config_path()
     return RuntimeOptions(
         cookie=stored_auth.cookie,
         csrf_token=stored_auth.csrf_token,
@@ -234,11 +234,11 @@ def resolve_project_name(runtime: RuntimeOptions, project: str | None) -> str:
     if project:
         return project
     project_config = load_project_config(runtime.project_config_path)
-    if project_config.project:
-        return project_config.project
+    if project_config.default_project:
+        return project_config.default_project
     raise AliLogError(
         "缺少 ProjectName，请通过 --project 提供，"
-        "或在项目根目录的 .alilog.json 中配置 project。"
+        "或在 ~/.alilog/settings.json 中配置 default_project。"
     )
 
 
@@ -264,5 +264,5 @@ def resolve_logstore_name(runtime: RuntimeOptions, logstore: str | None) -> str:
         return project_config.default_logstore
     raise AliLogError(
         "缺少 LogStoreName，请通过 --logstore 提供，"
-        "或在项目根目录的 .alilog.json 中配置 default_logstore。"
+        "或在 ~/.alilog/settings.json 中配置 default_logstore。"
     )

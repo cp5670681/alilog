@@ -59,34 +59,15 @@ class AuthConfig:
 class ProjectConfig:
     """项目配置信息。
 
-    存储项目级别的日志服务配置，通常从项目根目录的 .alilog.json 文件加载。
+    存储项目默认日志服务配置，通常从 ~/.alilog/settings.json 文件加载。
 
     Attributes:
-        project: 阿里云 SLS 项目名称
+        default_project: 默认的阿里云 SLS 项目名称
         default_logstore: 默认的日志库名称
-        logstore_rules: 日志库规则列表
     """
 
-    project: str | None = None
+    default_project: str | None = None
     default_logstore: str | None = None
-    logstore_rules: tuple["LogstoreRule", ...] = ()
-
-
-@dataclass(frozen=True)
-class LogstoreRule:
-    """日志库规则。
-
-    用于描述某个进程/命令对应的日志库，帮助从代码运行入口映射到日志来源。
-
-    Attributes:
-        logstore: 日志库名称
-        command: 对应的启动命令或入口命令
-        description: 规则说明
-    """
-
-    logstore: str
-    command: str
-    description: str
 
 
 @dataclass(frozen=True)
@@ -115,11 +96,11 @@ class RuntimeOptions:
     Attributes:
         cookie: 认证 Cookie
         csrf_token: CSRF 令牌
-        config_path: 全局配置文件路径（~/.alilog.json）
-        project_config_path: 项目配置文件路径，可能为 None
+        config_path: 全局认证配置文件路径（~/.alilog/auth.json）
+        project_config_path: 默认项目配置文件路径（~/.alilog/settings.json）
     """
 
     cookie: str | None
     csrf_token: str | None
     config_path: Path
-    project_config_path: Path | None
+    project_config_path: Path

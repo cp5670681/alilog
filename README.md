@@ -63,29 +63,17 @@ alilog auth save \
   --csrf-token 'xxxxxxxx'
 ```
 
-# 项目级配置
-项目级配置默认会从当前工作目录向上查找最近的项目根目录的 `.alilog.json`。
+# 默认配置
+认证配置保存在 `~/.alilog/auth.json`。
+
+默认项目和默认日志库保存在 `~/.alilog/settings.json`。
 
 ```json
 {
-  "project": "k8s-log-c19af6eaf83e44c28a7eb544564eee247",
-  "default_logstore": "research",
-  "logstore_rules": [
-    {
-      "logstore": "research",
-      "command": "./bin/start-web --config ./config/web.yaml",
-      "description": "主 Web 服务"
-    },
-    {
-      "logstore": "research-worker-default",
-      "command": "./bin/start-worker --config ./config/worker-default.yaml",
-      "description": "默认队列后台任务"
-    }
-  ]
+  "default_project": "k8s-log-c19af6eaf83e44c28a7eb544564eee247",
+  "default_logstore": "research"
 }
 ```
-
-`default_logstore` 仍用于命令行默认值；`logstore_rules` 用来描述“哪个启动入口/代码职责会把日志打到哪个 logstore”。
 
 ## 查日志
 
@@ -96,7 +84,7 @@ alilog auth save \
 - `YYYY-MM-DD HH:MM[:SS]`
 - 相对时间窗口 `--last`
 
-如果当前项目已经有 `.alilog.json`，那么 `--project` 和 `--logstore` 可以省略：
+如果 `~/.alilog/settings.json` 已经配置了 `default_project` 和 `default_logstore`，那么 `--project` 和 `--logstore` 可以省略：
 
 ```bash
 alilog search \
@@ -130,7 +118,7 @@ alilog search \
 
 `context` 直接使用 `search` 输出里的 `pack_id` 和 `pack_meta`，默认同时查前文和后文。
 
-同理，如果项目根目录已经有 `.alilog.json`，那么 `--project` 和 `--logstore` 也可以省略。下面先给出完整写法：
+同理，如果 `~/.alilog/settings.json` 已经配置了 `default_project` 和 `default_logstore`，那么 `--project` 和 `--logstore` 也可以省略。下面先给出完整写法：
 
 ```bash
 alilog context \

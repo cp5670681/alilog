@@ -68,11 +68,17 @@ def cli() -> None:
 @cli.command("search")
 @click.option(
     "--project",
-    help="ProjectName。未提供时尝试从项目根目录的 .alilog.json 读取。",
+    help=(
+        "ProjectName。未提供时尝试从 ~/.alilog/settings.json 的 "
+        "default_project 读取。"
+    ),
 )
 @click.option(
     "--logstore",
-    help="LogStoreName。未提供时尝试从项目根目录的 .alilog.json 读取。",
+    help=(
+        "LogStoreName。未提供时尝试从 ~/.alilog/settings.json 的 "
+        "default_logstore 读取。"
+    ),
 )
 @click.option(
     "--from",
@@ -140,11 +146,17 @@ def search_command(
 @cli.command("context")
 @click.option(
     "--project",
-    help="ProjectName。未提供时尝试从项目根目录的 .alilog.json 读取。",
+    help=(
+        "ProjectName。未提供时尝试从 ~/.alilog/settings.json 的 "
+        "default_project 读取。"
+    ),
 )
 @click.option(
     "--logstore",
-    help="LogStoreName。未提供时尝试从项目根目录的 .alilog.json 读取。",
+    help=(
+        "LogStoreName。未提供时尝试从 ~/.alilog/settings.json 的 "
+        "default_logstore 读取。"
+    ),
 )
 @click.option(
     "--pack-meta",
@@ -203,7 +215,7 @@ def auth_group() -> None:
 def auth_save(cookie: str | None, csrf_token: str | None) -> None:
     """保存认证配置。
 
-    将 Cookie 和 CSRF Token 保存到 ~/.alilog.json 文件。
+    将 Cookie 和 CSRF Token 保存到 ~/.alilog/auth.json 文件。
     """
     runtime = load_runtime()
     save_auth(runtime, cookie, csrf_token)

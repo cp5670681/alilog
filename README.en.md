@@ -63,30 +63,18 @@ alilog auth save \
   --csrf-token 'xxxxxxxx'
 ```
 
-# Project-level Configuration
+# Default Configuration
 
-Project-level configuration is read from the nearest project-root `.alilog.json` found by walking upward from the current working directory.
+Authentication is stored in `~/.alilog/auth.json`.
+
+Default project and logstore settings are stored in `~/.alilog/settings.json`.
 
 ```json
 {
-  "project": "k8s-log-c19af6eaf83e44c28a7eb544564eee247",
-  "default_logstore": "research",
-  "logstore_rules": [
-    {
-      "logstore": "research",
-      "command": "./bin/start-web --config ./config/web.yaml",
-      "description": "Primary web service"
-    },
-    {
-      "logstore": "research-worker-default",
-      "command": "./bin/start-worker --config ./config/worker-default.yaml",
-      "description": "Default background jobs"
-    }
-  ]
+  "default_project": "k8s-log-c19af6eaf83e44c28a7eb544564eee247",
+  "default_logstore": "research"
 }
 ```
-
-`default_logstore` is still used as the CLI fallback. `logstore_rules` documents which runtime entrypoint or code path maps to which logstore.
 
 ## Search Logs
 
@@ -97,7 +85,7 @@ Project-level configuration is read from the nearest project-root `.alilog.json`
 - `YYYY-MM-DD HH:MM[:SS]`
 - relative windows via `--last`
 
-If the current project already has `.alilog.json`, `--project` and `--logstore` are optional:
+If `~/.alilog/settings.json` already defines `default_project` and `default_logstore`, `--project` and `--logstore` are optional:
 
 ```bash
 alilog search \
@@ -131,7 +119,7 @@ alilog search \
 
 `context` uses `pack_id` and `pack_meta` from `search` output and fetches both previous and next logs by default.
 
-Similarly, if your project root already has `.alilog.json`, `--project` and `--logstore` can be omitted. The full form is:
+Similarly, if `~/.alilog/settings.json` already defines `default_project` and `default_logstore`, `--project` and `--logstore` can be omitted. The full form is:
 
 ```bash
 alilog context \
