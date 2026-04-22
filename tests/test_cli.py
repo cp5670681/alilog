@@ -404,17 +404,3 @@ def test_context_rejects_non_positive_size(invoke_cli, save_project_config) -> N
 
     assert result.exit_code != 0
     assert "x>=1" in result.output
-
-
-def test_install_skill_writes_claude_skill(
-    invoke_cli,
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    monkeypatch.setenv("CLAUDE_HOME", str(tmp_path / "claude-home"))
-
-    result = invoke_cli(["install-skill"])
-
-    assert result.exit_code == 0, result.output
-    assert "已安装 Claude skill" in result.output
-    assert (tmp_path / "claude-home" / "skills" / "alilog" / "SKILL.md").exists()

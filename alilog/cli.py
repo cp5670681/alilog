@@ -7,7 +7,6 @@
 - context: 上下文查询
 - auth save: 保存认证配置
 - auth login: 通过浏览器登录
-- install-skill: 安装 Claude skill
 """
 
 from __future__ import annotations
@@ -21,9 +20,7 @@ import httpx
 from .inputs import DEFAULT_TIMEZONE
 from .models import AliLogError
 from .rendering import render_context, render_search
-from .skills import INSTALL_REPO_URL
 from .usecases import (
-    install_skill,
     load_runtime,
     login_auth,
     run_context,
@@ -247,17 +244,6 @@ def auth_login(browser: str | None, login_url: str) -> None:
     click.echo(f"已保存认证配置到: {runtime.config_path}")
     if config.csrf_token:
         click.echo("已同时提取 csrf token。")
-
-
-@cli.command("install-skill")
-@as_click_command
-def install_skill_command() -> None:
-    """安装 Claude skill。
-
-    将 alilog skill 安装到 Claude 的 skills 目录，以便在 Claude 中使用。
-    """
-    path = install_skill()
-    click.echo(f"已安装 Claude skill: {path}")
 
 
 def main() -> None:

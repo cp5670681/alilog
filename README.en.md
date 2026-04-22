@@ -169,31 +169,6 @@ uv run mypy
 
 CI runs Ruff, mypy, and the test suite on Python 3.10, 3.11, 3.12, and 3.13.
 
-## AI Skill Setup
-
-This project supports Claude Code skills.
-
-After installing `alilog`, install the Claude skill with:
-
-```bash
-alilog install-skill
-```
-
-If you want a single setup flow from GitHub on a new machine:
-
-```bash
-uv tool install git+https://github.com/cp5670681/alilog.git
-alilog install-skill
-```
-
-This writes the skill to `~/.claude/skills/alilog/SKILL.md`.
-
-Manual copy is also supported:
-
-- Copy `alilog/assets/claude-skill/SKILL.md` to `~/.claude/skills/alilog/SKILL.md`
-
-The skill file itself includes instructions for installing `alilog` if the CLI is missing.
-
 ## License
 
 MIT. See [LICENSE](LICENSE).

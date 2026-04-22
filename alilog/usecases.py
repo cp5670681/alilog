@@ -8,7 +8,6 @@
 - run_context: 执行上下文查询
 - save_auth: 保存认证配置
 - login_auth: 通过浏览器登录并保存认证
-- install_skill: 安装 Claude skill
 """
 
 from __future__ import annotations
@@ -26,7 +25,6 @@ from .config import (
 )
 from .inputs import ensure_with_pack_meta, parse_pack_meta, resolve_search_window
 from .models import AliLogError, AuthConfig, RuntimeOptions, SearchWindow
-from .skills import install_ai_skill
 
 
 def load_runtime() -> RuntimeOptions:
@@ -216,17 +214,6 @@ def login_auth(
     )
     save_auth_config(runtime.config_path, config)
     return config
-
-
-def install_skill() -> str:
-    """安装 Claude skill。
-
-    将 alilog skill 安装到 Claude 的 skills 目录。
-
-    Returns:
-        安装的 skill 文件路径
-    """
-    return str(install_ai_skill())
 
 
 def resolve_project_name(runtime: RuntimeOptions, project: str | None) -> str:

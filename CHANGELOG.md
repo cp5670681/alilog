@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed
+
+- `install-skill` command and `skills` module (skill is now managed separately)
+- Claude Code skill asset at `alilog/assets/claude-skill/SKILL.md`
+- AI Skill setup documentation from README files
+
 ## [0.3.1] - 2026-04-20
 
 ### Added
