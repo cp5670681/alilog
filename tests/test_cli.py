@@ -124,6 +124,48 @@ def test_auth_login_captures_cookie_via_cdp(
     assert "已同时提取 csrf token" in result.output
 
 
+def test_auth_login_uses_auto_login_when_credentials_are_configured(
+    invoke_cli,
+    config_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    config_path.parent.mkdir(parents=True, exist_ok=True)
+    config_path.write_text(
+        json.dumps(
+            {
+                "username": "ram-user@example.onaliyun.com",
+                "password": "password",
+                "seed": "seed",
+            }
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        usecases,
+        "auto_login_auth",
+        lambda runtime: AuthConfig(cookie="fresh-cookie", csrf_token="fresh-csrf"),
+    )
+    monkeypatch.setattr(
+        usecases,
+        "capture_auth_via_cdp",
+        lambda **kwargs: pytest.fail("manual browser login should not be used"),
+    )
+
+    result = invoke_cli(["auth", "login"])
+
+    assert result.exit_code == 0, result.output
+    saved = json.loads(config_path.read_text(encoding="utf-8"))
+    assert saved == {
+        "cookie": "fresh-cookie",
+        "csrf_token": "fresh-csrf",
+        "username": "ram-user@example.onaliyun.com",
+        "password": "password",
+        "seed": "seed",
+    }
+    assert "正在使用已保存的自动登录凭据刷新认证" in result.output
+    assert "正在启动浏览器并连接 CDP" not in result.output
+
+
 def test_auth_save_clears_stale_csrf_when_only_cookie_is_updated(
     invoke_cli,
     config_path: Path,

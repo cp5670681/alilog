@@ -21,6 +21,7 @@ from .inputs import DEFAULT_TIMEZONE
 from .models import AliLogError
 from .rendering import render_context, render_search
 from .usecases import (
+    has_auto_login_credentials,
     load_runtime,
     login_auth,
     run_context,
@@ -245,13 +246,17 @@ def auth_save(
 )
 @as_click_command
 def auth_login(browser: str | None, login_url: str) -> None:
-    """通过浏览器登录。
+    """登录并保存认证。
 
-    启动浏览器，等待用户完成阿里云登录，自动提取并保存认证信息。
+    已配置自动登录凭据时直接刷新认证；否则启动浏览器等待用户完成阿里云登录，
+    自动提取并保存认证信息。
     """
     runtime = load_runtime()
-    click.echo("正在启动浏览器并连接 CDP...")
-    click.echo("请在打开的页面里完成阿里云登录。")
+    if has_auto_login_credentials(runtime):
+        click.echo("正在使用已保存的自动登录凭据刷新认证...")
+    else:
+        click.echo("正在启动浏览器并连接 CDP...")
+        click.echo("请在打开的页面里完成阿里云登录。")
     config = login_auth(
         runtime,
         browser=browser,

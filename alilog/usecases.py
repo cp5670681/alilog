@@ -234,9 +234,10 @@ def login_auth(
     login_url: str = DEFAULT_LOGIN_URL,
     confirm: Callable[[], object] | None = None,
 ) -> AuthConfig:
-    """通过浏览器登录并保存认证。
+    """登录并保存认证。
 
-    启动浏览器，等待用户完成登录，提取认证信息并保存。
+    有自动登录凭据时使用账号密码登录；否则启动浏览器等待用户手动登录，
+    提取认证信息并保存。
 
     Args:
         runtime: 运行时选项
@@ -247,6 +248,8 @@ def login_auth(
     Returns:
         保存认证配置
     """
+    if has_auto_login_credentials(runtime):
+        return save_refreshed_auth(runtime, auto_login_auth(runtime))
     config = capture_auth_via_cdp(
         browser=browser,
         login_url=login_url,

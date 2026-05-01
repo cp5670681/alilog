@@ -45,13 +45,15 @@ alilog --help
 
 ## 登录
 
-### 浏览器登录
+### 登录并刷新认证
 
 ```bash
 alilog auth login
 ```
 
-如果自动探测不到 Chrome/Chromium/Edge，可以显式指定浏览器可执行文件：
+如果已经通过 `auth save` 保存 RAM 用户名、密码和 TOTP seed，`auth login` 会直接使用无头浏览器自动登录并刷新 Cookie/csrf token。
+
+如果没有完整的自动登录凭据，`auth login` 会降级为原来的手动浏览器登录流程。若自动探测不到 Chrome/Chromium/Edge，可以显式指定浏览器可执行文件：
 
 ```bash
 alilog auth login \
@@ -60,7 +62,7 @@ alilog auth login \
 
 ### 自动登录凭据
 
-可以保存 RAM 用户名、密码和 TOTP seed。之后 `search` 或 `context` 如果发现认证失效，会自动登录获取新的 Cookie 和 csrf token，保存到 `~/.alilog/auth.json`，并重试当前请求一次。
+可以保存 RAM 用户名、密码和 TOTP seed。之后 `auth login` 会优先自动刷新认证；`search` 或 `context` 如果发现认证失效，也会自动登录获取新的 Cookie 和 csrf token，保存到 `~/.alilog/auth.json`，并重试当前请求一次。
 
 ```bash
 alilog auth save \

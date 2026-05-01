@@ -45,13 +45,15 @@ Upgrade commands:
 
 ## Login
 
-### Browser Login
+### Login and Refresh Authentication
 
 ```bash
 alilog auth login
 ```
 
-If auto-detection cannot find Chrome/Chromium/Edge, provide the browser executable path explicitly:
+If RAM username, password, and TOTP seed have already been saved with `auth save`, `auth login` uses a headless browser to log in automatically and refresh the cookie/csrf token.
+
+If complete automatic login credentials are not configured, `auth login` falls back to the original manual browser login flow. If auto-detection cannot find Chrome/Chromium/Edge, provide the browser executable path explicitly:
 
 ```bash
 alilog auth login \
@@ -60,7 +62,7 @@ alilog auth login \
 
 ### Automatic Login Credentials
 
-You can save a RAM username, password, and TOTP seed. When `search` or `context` detects an expired authentication session, it automatically logs in, saves a fresh cookie and csrf token to `~/.alilog/auth.json`, and retries the current request once.
+You can save a RAM username, password, and TOTP seed. After that, `auth login` prefers automatic authentication refresh; when `search` or `context` detects an expired authentication session, it also automatically logs in, saves a fresh cookie and csrf token to `~/.alilog/auth.json`, and retries the current request once.
 
 ```bash
 alilog auth save \
