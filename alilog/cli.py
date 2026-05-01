@@ -211,14 +211,23 @@ def auth_group() -> None:
 @auth_group.command("save")
 @click.option("--cookie", help="要保存的 Cookie。")
 @click.option("--csrf-token", help="要保存的 csrf token。")
+@click.option("--username", help="自动登录使用的 RAM 用户名。")
+@click.option("--password", help="自动登录使用的 RAM 用户密码。")
+@click.option("--seed", help="自动登录使用的 TOTP seed。")
 @as_click_command
-def auth_save(cookie: str | None, csrf_token: str | None) -> None:
+def auth_save(
+    cookie: str | None,
+    csrf_token: str | None,
+    username: str | None,
+    password: str | None,
+    seed: str | None,
+) -> None:
     """保存认证配置。
 
     将 Cookie 和 CSRF Token 保存到 ~/.alilog/auth.json 文件。
     """
     runtime = load_runtime()
-    save_auth(runtime, cookie, csrf_token)
+    save_auth(runtime, cookie, csrf_token, username, password, seed)
     click.echo(f"已保存认证配置到: {runtime.config_path}")
 
 

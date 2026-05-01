@@ -7,12 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-05-01
+
+### Added
+
+- Automatic RAM password login using Playwright and TOTP seed
+- Automatic re-authentication and one retry for `search` and `context` when a session expires
+- `auth save` options for storing automatic login credentials
+- Tests covering automatic login, re-authentication, and credential persistence
+
 ### Changed
 
 - Moved runtime configuration into `~/.alilog/`
 - Renamed the auth file from `~/.alilog.json` to `~/.alilog/auth.json`
 - Replaced project-root `.alilog.json` discovery with `~/.alilog/settings.json`
 - Simplified the default project config shape to `default_project` and `default_logstore`
+- Documented automatic login setup and local credential storage risks in both README files
+- Added `mintotp` and `playwright` runtime dependencies
 
 ### Removed
 

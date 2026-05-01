@@ -211,6 +211,20 @@ def test_extract_csrf_token_from_html_returns_none_without_sec_token() -> None:
     assert extract_csrf_token(page_html) is None
 
 
+def test_extract_csrf_token_requires_console_config_marker() -> None:
+    page_html = """
+    <html>
+      <script>
+        var OTHER_CONFIG = {
+          SEC_TOKEN: "98862ee0",
+        };
+      </script>
+    </html>
+    """
+
+    assert extract_csrf_token(page_html) is None
+
+
 def test_capture_auth_from_page_target_retries_stale_websocket(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

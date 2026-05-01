@@ -15,6 +15,7 @@
 
 - 这个工具依赖阿里云登录态。
 - 认证基于浏览器 Cookie，只建议在本机和受信任环境使用。
+- 如果启用自动登录，`~/.alilog/auth.json` 会保存 RAM 用户名、密码和 TOTP seed。请确保该文件只在受信任机器上使用，并保持默认的本机文件权限。
 
 ## 环境要求
 
@@ -44,6 +45,8 @@ alilog --help
 
 ## 登录
 
+### 浏览器登录
+
 ```bash
 alilog auth login
 ```
@@ -55,7 +58,37 @@ alilog auth login \
   --browser '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
 ```
 
-或者手动保存cookie和csrf-token(可通过抓包获取):
+### 自动登录凭据
+
+可以保存 RAM 用户名、密码和 TOTP seed。之后 `search` 或 `context` 如果发现认证失效，会自动登录获取新的 Cookie 和 csrf token，保存到 `~/.alilog/auth.json`，并重试当前请求一次。
+
+```bash
+alilog auth save \
+  --username 'ram-user@example.onaliyun.com' \
+  --password 'your-password' \
+  --seed 'your-totp-seed'
+```
+
+也可以同时保存已有 Cookie：
+
+```bash
+alilog auth save \
+  --cookie 'aliyun_lang=zh; ...' \
+  --csrf-token 'xxxxxxxx' \
+  --username 'ram-user@example.onaliyun.com' \
+  --password 'your-password' \
+  --seed 'your-totp-seed'
+```
+
+自动登录使用 Playwright，默认以无头模式运行。默认会尝试 Playwright 自带 Chromium；如果未安装，会回退到系统中的 Chrome/Chromium/Edge。需要安装 Playwright 自带浏览器时执行：
+
+```bash
+uv run playwright install chromium
+```
+
+### 手动保存 Cookie
+
+也可以只手动保存 Cookie 和 csrf-token（可通过抓包获取）：
 
 ```bash
 alilog auth save \
@@ -65,6 +98,18 @@ alilog auth save \
 
 # 默认配置
 认证配置保存在 `~/.alilog/auth.json`。
+
+示例：
+
+```json
+{
+  "cookie": "aliyun_lang=zh; ...",
+  "csrf_token": "xxxxxxxx",
+  "username": "ram-user@example.onaliyun.com",
+  "password": "your-password",
+  "seed": "your-totp-seed"
+}
+```
 
 默认项目和默认日志库保存在 `~/.alilog/settings.json`。
 

@@ -66,13 +66,13 @@ def load_auth_config(path: Path) -> AuthConfig:
         raise AliLogError(f"配置文件不是合法 JSON: {path}") from exc
     if not isinstance(payload, dict):
         raise AliLogError(f"配置文件格式无效: {path}")
-    cookie = payload.get("cookie")
-    csrf_token = payload.get("csrf_token")
-    if cookie is not None and not isinstance(cookie, str):
-        raise AliLogError(f"配置文件中的 cookie 必须是字符串: {path}")
-    if csrf_token is not None and not isinstance(csrf_token, str):
-        raise AliLogError(f"配置文件中的 csrf_token 必须是字符串: {path}")
-    return AuthConfig(cookie=cookie, csrf_token=csrf_token)
+    values: dict[str, str | None] = {}
+    for key in ("cookie", "csrf_token", "username", "password", "seed"):
+        value = payload.get(key)
+        if value is not None and not isinstance(value, str):
+            raise AliLogError(f"配置文件中的 {key} 必须是字符串: {path}")
+        values[key] = value
+    return AuthConfig(**values)
 
 
 def load_project_config(path: Path) -> ProjectConfig:
@@ -135,6 +135,9 @@ def save_auth_config(path: Path, config: AuthConfig) -> None:
         for key, value in {
             "cookie": config.cookie,
             "csrf_token": config.csrf_token,
+            "username": config.username,
+            "password": config.password,
+            "seed": config.seed,
         }.items()
         if value
     }

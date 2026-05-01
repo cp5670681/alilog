@@ -20,12 +20,21 @@ def test_save_and_load_auth_config(tmp_path: Path) -> None:
 
     save_auth_config(
         path,
-        AuthConfig(cookie="cookie=value", csrf_token="csrf-token"),
+        AuthConfig(
+            cookie="cookie=value",
+            csrf_token="csrf-token",
+            username="user@example.onaliyun.com",
+            password="secret",
+            seed="totp-seed",
+        ),
     )
 
     loaded = load_auth_config(path)
     assert loaded.cookie == "cookie=value"
     assert loaded.csrf_token == "csrf-token"
+    assert loaded.username == "user@example.onaliyun.com"
+    assert loaded.password == "secret"
+    assert loaded.seed == "totp-seed"
     assert json.loads(path.read_text(encoding="utf-8"))["cookie"] == "cookie=value"
 
 

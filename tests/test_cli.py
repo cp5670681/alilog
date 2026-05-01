@@ -24,13 +24,29 @@ def test_auth_save_writes_config_file(
     config_path: Path,
 ) -> None:
     result = invoke_cli(
-        ["auth", "save", "--cookie", "cookie=value", "--csrf-token", "csrf-token"]
+        [
+            "auth",
+            "save",
+            "--cookie",
+            "cookie=value",
+            "--csrf-token",
+            "csrf-token",
+            "--username",
+            "ram-user@example.onaliyun.com",
+            "--password",
+            "password",
+            "--seed",
+            "seed",
+        ]
     )
 
     assert result.exit_code == 0, result.output
     saved = json.loads(config_path.read_text(encoding="utf-8"))
     assert saved["cookie"] == "cookie=value"
     assert saved["csrf_token"] == "csrf-token"
+    assert saved["username"] == "ram-user@example.onaliyun.com"
+    assert saved["password"] == "password"
+    assert saved["seed"] == "seed"
     assert str(config_path.parent) in result.output
 
 
@@ -39,6 +55,32 @@ def test_auth_save_requires_cookie(invoke_cli) -> None:
 
     assert result.exit_code != 0
     assert "Cookie 为必填" in result.output
+
+
+def test_auth_save_accepts_auto_login_credentials_without_cookie(
+    invoke_cli,
+    config_path: Path,
+) -> None:
+    result = invoke_cli(
+        [
+            "auth",
+            "save",
+            "--username",
+            "ram-user@example.onaliyun.com",
+            "--password",
+            "password",
+            "--seed",
+            "seed",
+        ]
+    )
+
+    assert result.exit_code == 0, result.output
+    saved = json.loads(config_path.read_text(encoding="utf-8"))
+    assert saved == {
+        "username": "ram-user@example.onaliyun.com",
+        "password": "password",
+        "seed": "seed",
+    }
 
 
 def test_auth_login_captures_cookie_via_cdp(
@@ -97,6 +139,36 @@ def test_auth_save_clears_stale_csrf_when_only_cookie_is_updated(
     assert result.exit_code == 0, result.output
     saved = json.loads(config_path.read_text(encoding="utf-8"))
     assert saved == {"cookie": "new-cookie"}
+
+
+def test_auth_save_preserves_auto_login_credentials_when_cookie_is_updated(
+    invoke_cli,
+    config_path: Path,
+) -> None:
+    config_path.parent.mkdir(parents=True, exist_ok=True)
+    config_path.write_text(
+        json.dumps(
+            {
+                "cookie": "old-cookie",
+                "csrf_token": "old-csrf",
+                "username": "ram-user@example.onaliyun.com",
+                "password": "password",
+                "seed": "seed",
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    result = invoke_cli(["auth", "save", "--cookie", "new-cookie"])
+
+    assert result.exit_code == 0, result.output
+    saved = json.loads(config_path.read_text(encoding="utf-8"))
+    assert saved == {
+        "cookie": "new-cookie",
+        "username": "ram-user@example.onaliyun.com",
+        "password": "password",
+        "seed": "seed",
+    }
 
 
 def test_auth_save_ignores_invalid_project_config(

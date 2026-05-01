@@ -49,10 +49,16 @@ class AuthConfig:
     Attributes:
         cookie: HTTP Cookie 字符串，用于身份验证
         csrf_token: CSRF 令牌，用于防止跨站请求伪造
+        username: RAM 用户名，用于认证失效时自动登录
+        password: RAM 用户密码，用于认证失效时自动登录
+        seed: TOTP seed，用于认证失效时自动登录
     """
 
     cookie: str | None = None
     csrf_token: str | None = None
+    username: str | None = None
+    password: str | None = None
+    seed: str | None = None
 
 
 @dataclass(frozen=True)
@@ -96,11 +102,17 @@ class RuntimeOptions:
     Attributes:
         cookie: 认证 Cookie
         csrf_token: CSRF 令牌
+        username: RAM 用户名
+        password: RAM 用户密码
+        seed: TOTP seed
         config_path: 全局认证配置文件路径（~/.alilog/auth.json）
         project_config_path: 默认项目配置文件路径（~/.alilog/settings.json）
     """
 
     cookie: str | None
     csrf_token: str | None
+    username: str | None
+    password: str | None
+    seed: str | None
     config_path: Path
     project_config_path: Path

@@ -15,6 +15,7 @@ This project keeps a narrow CLI surface for two common workflows:
 
 - This tool depends on an Alibaba Cloud Console login session.
 - Authentication is based on browser cookies, so it is intended for local, trusted machines only.
+- If automatic login is enabled, `~/.alilog/auth.json` stores the RAM username, password, and TOTP seed. Keep this file on trusted machines only and preserve its local-only permissions.
 
 ## Requirements
 
@@ -44,6 +45,8 @@ Upgrade commands:
 
 ## Login
 
+### Browser Login
+
 ```bash
 alilog auth login
 ```
@@ -55,7 +58,37 @@ alilog auth login \
   --browser '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
 ```
 
-Or manually save the cookie and csrf-token (can be obtained via packet capture):
+### Automatic Login Credentials
+
+You can save a RAM username, password, and TOTP seed. When `search` or `context` detects an expired authentication session, it automatically logs in, saves a fresh cookie and csrf token to `~/.alilog/auth.json`, and retries the current request once.
+
+```bash
+alilog auth save \
+  --username 'ram-user@example.onaliyun.com' \
+  --password 'your-password' \
+  --seed 'your-totp-seed'
+```
+
+You can also save an existing cookie at the same time:
+
+```bash
+alilog auth save \
+  --cookie 'aliyun_lang=zh; ...' \
+  --csrf-token 'xxxxxxxx' \
+  --username 'ram-user@example.onaliyun.com' \
+  --password 'your-password' \
+  --seed 'your-totp-seed'
+```
+
+Automatic login uses Playwright and runs headless by default. It tries Playwright's bundled Chromium first; if that browser is not installed, it falls back to Chrome/Chromium/Edge on the system. To install the bundled browser, run:
+
+```bash
+uv run playwright install chromium
+```
+
+### Manual Cookie Storage
+
+You can also manually save only the cookie and csrf-token (can be obtained via packet capture):
 
 ```bash
 alilog auth save \
@@ -66,6 +99,18 @@ alilog auth save \
 # Default Configuration
 
 Authentication is stored in `~/.alilog/auth.json`.
+
+Example:
+
+```json
+{
+  "cookie": "aliyun_lang=zh; ...",
+  "csrf_token": "xxxxxxxx",
+  "username": "ram-user@example.onaliyun.com",
+  "password": "your-password",
+  "seed": "your-totp-seed"
+}
+```
 
 Default project and logstore settings are stored in `~/.alilog/settings.json`.
 

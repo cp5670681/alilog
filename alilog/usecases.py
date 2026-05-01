@@ -12,8 +12,10 @@
 
 from __future__ import annotations
 
+import sys
 from collections.abc import Callable
 
+from .auto_login import auto_login_with_password
 from .browser_auth import DEFAULT_LOGIN_URL, capture_auth_via_cdp
 from .client import AliyunSLSClient
 from .config import (
@@ -41,6 +43,9 @@ def load_runtime() -> RuntimeOptions:
     return RuntimeOptions(
         cookie=stored_auth.cookie,
         csrf_token=stored_auth.csrf_token,
+        username=stored_auth.username,
+        password=stored_auth.password,
+        seed=stored_auth.seed,
         config_path=config_path,
         project_config_path=project_config_path,
     )
@@ -101,14 +106,22 @@ def run_search(
         last=last,
         timezone_name=timezone_name,
     )
-    response = get_client(runtime).search_logs(
-        project=resolved_project,
-        logstore=resolved_logstore,
-        start=window.start,
-        end=window.end,
-        query=ensure_with_pack_meta(query),
-        page=page,
-        size=size,
+    resolved_query = ensure_with_pack_meta(query)
+
+    def search_with_runtime(active_runtime: RuntimeOptions) -> dict:
+        return get_client(active_runtime).search_logs(
+            project=resolved_project,
+            logstore=resolved_logstore,
+            start=window.start,
+            end=window.end,
+            query=resolved_query,
+            page=page,
+            size=size,
+        )
+
+    response = call_with_auto_reauth(
+        runtime,
+        search_with_runtime,
     )
     return window, response
 
@@ -137,27 +150,39 @@ def run_context(
     Returns:
         字典 {'prev': 前向查询结果, 'next': 后向查询结果}
     """
-    client = get_client(runtime)
     coords = parse_pack_meta(pack_meta)
     resolved_project = resolve_project_name(runtime, project)
     resolved_logstore = resolve_logstore_name(runtime, logstore)
-    return {
-        label: client.context_logs(
-            project=resolved_project,
-            logstore=resolved_logstore,
-            coords=coords,
-            pack_id=pack_id,
-            size=size,
-            reserve=reserve,
+    results: dict[str, dict] = {}
+    for label, reserve in (("prev", False), ("next", True)):
+        def context_with_runtime(
+            active_runtime: RuntimeOptions,
+            *,
+            reserve: bool = reserve,
+        ) -> dict:
+            return get_client(active_runtime).context_logs(
+                project=resolved_project,
+                logstore=resolved_logstore,
+                coords=coords,
+                pack_id=pack_id,
+                size=size,
+                reserve=reserve,
+            )
+
+        results[label] = call_with_auto_reauth(
+            runtime,
+            context_with_runtime,
         )
-        for label, reserve in (("prev", False), ("next", True))
-    }
+    return results
 
 
 def save_auth(
     runtime: RuntimeOptions,
     cookie: str | None,
     csrf_token: str | None,
+    username: str | None = None,
+    password: str | None = None,
+    seed: str | None = None,
 ) -> None:
     """保存认证配置。
 
@@ -167,13 +192,14 @@ def save_auth(
         runtime: 运行时选项
         cookie: 新的 Cookie，为 None 时保留现有值
         csrf_token: 新的 CSRF Token
+        username: 新的 RAM 用户名，为 None 时保留现有值
+        password: 新的 RAM 用户密码，为 None 时保留现有值
+        seed: 新的 TOTP seed，为 None 时保留现有值
 
     Raises:
         AliLogError: Cookie 为空时抛出
     """
     final_cookie = runtime.cookie if cookie is None else cookie
-    if not final_cookie:
-        raise AliLogError("Cookie 为必填，请通过 --cookie 提供，或先从已有配置读取。")
     if cookie is None:
         final_csrf_token = (
             runtime.csrf_token if csrf_token is None
@@ -181,9 +207,23 @@ def save_auth(
         )
     else:
         final_csrf_token = csrf_token or None
+    final_username = runtime.username if username is None else (username or None)
+    final_password = runtime.password if password is None else (password or None)
+    final_seed = runtime.seed if seed is None else (seed or None)
+    if not final_cookie and not all((final_username, final_password, final_seed)):
+        raise AliLogError(
+            "Cookie 为必填，请通过 --cookie 提供，或配置 username/password/seed "
+            "以便自动登录。"
+        )
     save_auth_config(
         runtime.config_path,
-        AuthConfig(cookie=final_cookie, csrf_token=final_csrf_token),
+        AuthConfig(
+            cookie=final_cookie,
+            csrf_token=final_csrf_token,
+            username=final_username,
+            password=final_password,
+            seed=final_seed,
+        ),
     )
 
 
@@ -212,8 +252,100 @@ def login_auth(
         login_url=login_url,
         confirm=confirm,
     )
-    save_auth_config(runtime.config_path, config)
-    return config
+    return save_refreshed_auth(runtime, config)
+
+
+def auto_login_auth(runtime: RuntimeOptions) -> AuthConfig:
+    """使用 auth.json 中的账号、密码和 seed 自动登录。"""
+    if not runtime.username or not runtime.password or not runtime.seed:
+        raise AliLogError(
+            "认证已失效，且 ~/.alilog/auth.json 缺少 username/password/seed，"
+            "无法自动登录。"
+        )
+    return auto_login_with_password(
+        username=runtime.username,
+        password=runtime.password,
+        seed=runtime.seed,
+    )
+
+
+def call_with_auto_reauth(
+    runtime: RuntimeOptions,
+    call: Callable[[RuntimeOptions], dict],
+) -> dict:
+    """调用接口；认证失效时自动登录并重试一次。"""
+    if not runtime.cookie and has_auto_login_credentials(runtime):
+        refreshed = refresh_auth_with_notice(runtime)
+        return call(runtime_with_auth(runtime, refreshed))
+    try:
+        return call(runtime)
+    except AliLogError as exc:
+        if not is_auth_expired_error(exc):
+            raise
+    refreshed = refresh_auth_with_notice(runtime)
+    return call(runtime_with_auth(runtime, refreshed))
+
+
+def refresh_auth_with_notice(runtime: RuntimeOptions) -> AuthConfig:
+    """自动登录刷新认证，并向控制台输出进度提示。"""
+    print("认证已失效，正在自动登录并刷新 Cookie...", file=sys.stderr)
+    refreshed = save_refreshed_auth(runtime, auto_login_auth(runtime))
+    print("自动登录成功，已刷新认证信息。", file=sys.stderr)
+    return refreshed
+
+
+def has_auto_login_credentials(runtime: RuntimeOptions) -> bool:
+    """判断运行时是否具备自动登录所需凭据。"""
+    return bool(runtime.username and runtime.password and runtime.seed)
+
+
+def runtime_with_auth(runtime: RuntimeOptions, auth: AuthConfig) -> RuntimeOptions:
+    """用刷新后的认证信息构造新的运行时。"""
+    return RuntimeOptions(
+        cookie=auth.cookie,
+        csrf_token=auth.csrf_token,
+        username=auth.username,
+        password=auth.password,
+        seed=auth.seed,
+        config_path=runtime.config_path,
+        project_config_path=runtime.project_config_path,
+    )
+
+
+def is_auth_expired_error(exc: AliLogError) -> bool:
+    """判断错误是否表示认证失效。"""
+    message = str(exc).lower()
+    return any(
+        marker in message
+        for marker in (
+            "http 401",
+            "http 403",
+            "unauthorized",
+            "forbidden",
+            "csrf",
+            "login",
+            "not login",
+            "未登录",
+            "登录",
+            "认证",
+        )
+    )
+
+
+def save_refreshed_auth(
+    runtime: RuntimeOptions,
+    config: AuthConfig,
+) -> AuthConfig:
+    """保存新 cookie/csrf，同时保留自动登录凭据。"""
+    refreshed = AuthConfig(
+        cookie=config.cookie,
+        csrf_token=config.csrf_token,
+        username=runtime.username,
+        password=runtime.password,
+        seed=runtime.seed,
+    )
+    save_auth_config(runtime.config_path, refreshed)
+    return refreshed
 
 
 def resolve_project_name(runtime: RuntimeOptions, project: str | None) -> str:
