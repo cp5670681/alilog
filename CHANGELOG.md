@@ -7,20 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Expired `search`/`context` sessions without saved RAM credentials now point users to `alilog auth login` instead of attempting credential refresh.
+
+### Changed
+
+- README files now document the manual browser login flow only.
+
 ## [0.5.1] - 2026-05-01
 
 ### Changed
 
-- `auth login` now refreshes authentication with saved automatic login credentials before falling back to the manual browser login flow
+- `auth login` now refreshes authentication with saved RAM credentials before falling back to the manual browser login flow
 
 ## [0.5.0] - 2026-05-01
 
 ### Added
 
-- Automatic RAM password login using Playwright and TOTP seed
-- Automatic re-authentication and one retry for `search` and `context` when a session expires
-- `auth save` options for storing automatic login credentials
-- Tests covering automatic login, re-authentication, and credential persistence
+- RAM password credential refresh using Playwright and TOTP seed
+- Credential-based re-authentication and one retry for `search` and `context` when a session expires
+- `auth save` options for storing RAM login credentials
+- Tests covering credential refresh, re-authentication, and credential persistence
 
 ### Changed
 
@@ -28,7 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Renamed the auth file from `~/.alilog.json` to `~/.alilog/auth.json`
 - Replaced project-root `.alilog.json` discovery with `~/.alilog/settings.json`
 - Simplified the default project config shape to `default_project` and `default_logstore`
-- Documented automatic login setup and local credential storage risks in both README files
+- Documented local credential storage risks in both README files
 - Added `mintotp` and `playwright` runtime dependencies
 
 ### Removed
@@ -53,7 +61,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `auth login` command for automatic browser authentication via Chrome DevTools Protocol (CDP)
+- `auth login` command for browser authentication via Chrome DevTools Protocol (CDP)
   - Extracts cookies and CSRF token from an already logged-in browser
   - Supports Chrome, Edge, and other Chromium-based browsers
   - Interactive confirmation before saving credentials

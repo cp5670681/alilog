@@ -212,9 +212,9 @@ def auth_group() -> None:
 @auth_group.command("save")
 @click.option("--cookie", help="要保存的 Cookie。")
 @click.option("--csrf-token", help="要保存的 csrf token。")
-@click.option("--username", help="自动登录使用的 RAM 用户名。")
-@click.option("--password", help="自动登录使用的 RAM 用户密码。")
-@click.option("--seed", help="自动登录使用的 TOTP seed。")
+@click.option("--username", help="RAM 用户名。")
+@click.option("--password", help="RAM 用户密码。")
+@click.option("--seed", help="TOTP seed。")
 @as_click_command
 def auth_save(
     cookie: str | None,
@@ -248,12 +248,11 @@ def auth_save(
 def auth_login(browser: str | None, login_url: str) -> None:
     """登录并保存认证。
 
-    已配置自动登录凭据时直接刷新认证；否则启动浏览器等待用户完成阿里云登录，
-    自动提取并保存认证信息。
+    启动浏览器等待用户完成阿里云登录，自动提取并保存认证信息。
     """
     runtime = load_runtime()
     if has_auto_login_credentials(runtime):
-        click.echo("正在使用已保存的自动登录凭据刷新认证...")
+        click.echo("正在使用已保存的凭据刷新认证...")
     else:
         click.echo("正在启动浏览器并连接 CDP...")
         click.echo("请在打开的页面里完成阿里云登录。")

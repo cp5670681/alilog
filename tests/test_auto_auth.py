@@ -120,6 +120,48 @@ def test_run_search_auto_logs_in_when_cookie_is_missing(
     assert "自动登录成功，已刷新认证信息" in captured.err
 
 
+def test_run_search_expired_auth_without_credentials_points_to_manual_login(
+    tmp_path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    runtime = RuntimeOptions(
+        cookie="stale-cookie",
+        csrf_token="stale-csrf",
+        username=None,
+        password=None,
+        seed=None,
+        config_path=tmp_path / ".alilog" / "auth.json",
+        project_config_path=tmp_path / ".alilog" / "settings.json",
+    )
+    client = MagicMock()
+    client.search_logs.side_effect = AliLogError("日志查询失败: HTTP 401")
+
+    monkeypatch.setattr(usecases, "get_client", lambda runtime: client)
+    monkeypatch.setattr(
+        usecases,
+        "auto_login_auth",
+        lambda runtime: pytest.fail("credential login should not be used"),
+    )
+
+    with pytest.raises(AliLogError, match="alilog auth login"):
+        usecases.run_search(
+            runtime=runtime,
+            project="project-a",
+            logstore="logstore-a",
+            start="2026-04-16 23:06:00",
+            end="2026-04-16 23:21:00",
+            last=None,
+            timezone_name="Asia/Shanghai",
+            query="error",
+            page=1,
+            size=20,
+        )
+
+    captured = capsys.readouterr()
+    assert "自动登录" not in captured.err
+
+
 def test_auto_login_requires_username_password_and_seed(tmp_path) -> None:
     runtime = RuntimeOptions(
         cookie="stale-cookie",

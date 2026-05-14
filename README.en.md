@@ -15,7 +15,6 @@ This project keeps a narrow CLI surface for two common workflows:
 
 - This tool depends on an Alibaba Cloud Console login session.
 - Authentication is based on browser cookies, so it is intended for local, trusted machines only.
-- If automatic login is enabled, `~/.alilog/auth.json` stores the RAM username, password, and TOTP seed. Keep this file on trusted machines only and preserve its local-only permissions.
 
 ## Requirements
 
@@ -51,41 +50,13 @@ Upgrade commands:
 alilog auth login
 ```
 
-If RAM username, password, and TOTP seed have already been saved with `auth save`, `auth login` uses a headless browser to log in automatically and refresh the cookie/csrf token.
+This command starts a browser and connects through CDP. Complete the Alibaba Cloud login in the opened page, then return to the terminal and press Enter. The tool extracts and saves the cookie/csrf token.
 
-If complete automatic login credentials are not configured, `auth login` falls back to the original manual browser login flow. If auto-detection cannot find Chrome/Chromium/Edge, provide the browser executable path explicitly:
+If auto-detection cannot find Chrome/Chromium/Edge, provide the browser executable path explicitly:
 
 ```bash
 alilog auth login \
   --browser '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
-```
-
-### Automatic Login Credentials
-
-You can save a RAM username, password, and TOTP seed. After that, `auth login` prefers automatic authentication refresh; when `search` or `context` detects an expired authentication session, it also automatically logs in, saves a fresh cookie and csrf token to `~/.alilog/auth.json`, and retries the current request once.
-
-```bash
-alilog auth save \
-  --username 'ram-user@example.onaliyun.com' \
-  --password 'your-password' \
-  --seed 'your-totp-seed'
-```
-
-You can also save an existing cookie at the same time:
-
-```bash
-alilog auth save \
-  --cookie 'aliyun_lang=zh; ...' \
-  --csrf-token 'xxxxxxxx' \
-  --username 'ram-user@example.onaliyun.com' \
-  --password 'your-password' \
-  --seed 'your-totp-seed'
-```
-
-Automatic login uses Playwright and runs headless by default. It tries Playwright's bundled Chromium first; if that browser is not installed, it falls back to Chrome/Chromium/Edge on the system. To install the bundled browser, run:
-
-```bash
-uv run playwright install chromium
 ```
 
 ### Manual Cookie Storage
@@ -107,10 +78,7 @@ Example:
 ```json
 {
   "cookie": "aliyun_lang=zh; ...",
-  "csrf_token": "xxxxxxxx",
-  "username": "ram-user@example.onaliyun.com",
-  "password": "your-password",
-  "seed": "your-totp-seed"
+  "csrf_token": "xxxxxxxx"
 }
 ```
 

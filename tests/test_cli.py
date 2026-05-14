@@ -162,7 +162,7 @@ def test_auth_login_uses_auto_login_when_credentials_are_configured(
         "password": "password",
         "seed": "seed",
     }
-    assert "正在使用已保存的自动登录凭据刷新认证" in result.output
+    assert "正在使用已保存的凭据刷新认证" in result.output
     assert "正在启动浏览器并连接 CDP" not in result.output
 
 

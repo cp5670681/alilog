@@ -212,8 +212,8 @@ def save_auth(
     final_seed = runtime.seed if seed is None else (seed or None)
     if not final_cookie and not all((final_username, final_password, final_seed)):
         raise AliLogError(
-            "Cookie 为必填，请通过 --cookie 提供，或配置 username/password/seed "
-            "以便自动登录。"
+            "Cookie 为必填，请通过 --cookie 提供，或提供完整的 "
+            "username/password/seed。"
         )
     save_auth_config(
         runtime.config_path,
@@ -285,6 +285,8 @@ def call_with_auto_reauth(
     except AliLogError as exc:
         if not is_auth_expired_error(exc):
             raise
+        if not has_auto_login_credentials(runtime):
+            raise manual_login_required_error() from exc
     refreshed = refresh_auth_with_notice(runtime)
     return call(runtime_with_auth(runtime, refreshed))
 
@@ -300,6 +302,14 @@ def refresh_auth_with_notice(runtime: RuntimeOptions) -> AuthConfig:
 def has_auto_login_credentials(runtime: RuntimeOptions) -> bool:
     """判断运行时是否具备自动登录所需凭据。"""
     return bool(runtime.username and runtime.password and runtime.seed)
+
+
+def manual_login_required_error() -> AliLogError:
+    """构造需要手动刷新认证的错误。"""
+    return AliLogError(
+        "认证已失效。请先运行 `alilog auth login` 手动登录并刷新 Cookie，"
+        "然后重试当前命令。"
+    )
 
 
 def runtime_with_auth(runtime: RuntimeOptions, auth: AuthConfig) -> RuntimeOptions:
