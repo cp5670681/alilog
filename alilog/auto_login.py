@@ -59,6 +59,7 @@ def auto_login_with_password(
                 context = browser.new_context(
                     viewport=DEFAULT_VIEWPORT,
                     user_agent=DEFAULT_USER_AGENT,
+                    locale="zh-CN",
                 )
                 page = context.new_page()
                 page.goto(login_url, wait_until="networkidle")
