@@ -69,17 +69,13 @@ def cli() -> None:
 @cli.command("search")
 @click.option(
     "--project",
-    help=(
-        "ProjectName。未提供时尝试从 ~/.alilog/settings.json 的 "
-        "default_project 读取。"
-    ),
+    required=True,
+    help="ProjectName。",
 )
 @click.option(
     "--logstore",
-    help=(
-        "LogStoreName。未提供时尝试从 ~/.alilog/settings.json 的 "
-        "default_logstore 读取。"
-    ),
+    required=True,
+    help="LogStoreName。",
 )
 @click.option(
     "--from",
@@ -147,17 +143,13 @@ def search_command(
 @cli.command("context")
 @click.option(
     "--project",
-    help=(
-        "ProjectName。未提供时尝试从 ~/.alilog/settings.json 的 "
-        "default_project 读取。"
-    ),
+    required=True,
+    help="ProjectName。",
 )
 @click.option(
     "--logstore",
-    help=(
-        "LogStoreName。未提供时尝试从 ~/.alilog/settings.json 的 "
-        "default_logstore 读取。"
-    ),
+    required=True,
+    help="LogStoreName。",
 )
 @click.option(
     "--pack-meta",

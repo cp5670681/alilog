@@ -81,15 +81,6 @@ alilog auth save \
 }
 ```
 
-默认项目和默认日志库保存在 `~/.alilog/settings.json`。
-
-```json
-{
-  "default_project": "k8s-log-c19af6eaf83e44c28a7eb544564eee247",
-  "default_logstore": "research"
-}
-```
-
 ## 查日志
 
 `search` 支持：
@@ -99,16 +90,7 @@ alilog auth save \
 - `YYYY-MM-DD HH:MM[:SS]`
 - 相对时间窗口 `--last`
 
-如果 `~/.alilog/settings.json` 已经配置了 `default_project` 和 `default_logstore`，那么 `--project` 和 `--logstore` 可以省略：
-
-```bash
-alilog search \
-  --from '2026-04-16 23:06:00' \
-  --to '2026-04-16 23:21:00' \
-  --query 'error'
-```
-
-如果需要，也可以继续显式覆盖：
+`--project` 和 `--logstore` 为必需参数：
 
 ```bash
 alilog search \
@@ -133,7 +115,7 @@ alilog search \
 
 `context` 直接使用 `search` 输出里的 `pack_id` 和 `pack_meta`，默认同时查前文和后文。
 
-同理，如果 `~/.alilog/settings.json` 已经配置了 `default_project` 和 `default_logstore`，那么 `--project` 和 `--logstore` 也可以省略。下面先给出完整写法：
+`--project` 和 `--logstore` 为必需参数：
 
 ```bash
 alilog context \

@@ -10,15 +10,6 @@ import alilog.usecases as usecases
 from alilog.models import AuthConfig
 
 
-def build_project_config(*, default_logstore: str | None = "research") -> str:
-    payload: dict[str, object] = {
-        "default_project": "project-a",
-    }
-    if default_logstore is not None:
-        payload["default_logstore"] = default_logstore
-    return json.dumps(payload, ensure_ascii=False)
-
-
 def test_auth_save_writes_config_file(
     invoke_cli,
     config_path: Path,
@@ -213,24 +204,10 @@ def test_auth_save_preserves_auto_login_credentials_when_cookie_is_updated(
     }
 
 
-def test_auth_save_ignores_invalid_project_config(
-    invoke_cli,
-    tmp_path: Path,
-) -> None:
-    config_path = tmp_path / ".alilog" / "settings.json"
-    config_path.parent.mkdir(parents=True, exist_ok=True)
-    config_path.write_text("{bad json", encoding="utf-8")
-
-    result = invoke_cli(["auth", "save", "--cookie", "cookie=value"])
-
-    assert result.exit_code == 0, result.output
-
-
 def test_context_always_calls_prev_and_next(
     invoke_cli,
     monkeypatch: pytest.MonkeyPatch,
     save_auth,
-    save_project_config,
 ) -> None:
     fake_client = MagicMock()
     fake_client.context_logs.side_effect = [
@@ -260,12 +237,15 @@ def test_context_always_calls_prev_and_next(
         },
     ]
     save_auth()
-    save_project_config(build_project_config())
     monkeypatch.setattr(usecases, "get_client", lambda runtime: fake_client)
 
     result = invoke_cli(
         [
             "context",
+            "--project",
+            "project-a",
+            "--logstore",
+            "research",
             "--pack-meta",
             "1|cursor|54|6",
             "--pack-id",
@@ -283,7 +263,6 @@ def test_search_uses_auth_from_default_config(
     invoke_cli,
     monkeypatch: pytest.MonkeyPatch,
     save_auth,
-    save_project_config,
 ) -> None:
     fake_client = MagicMock()
     fake_client.search_logs.return_value = {
@@ -291,12 +270,15 @@ def test_search_uses_auth_from_default_config(
         "data": [{"__time__": 1776352860, "content": "hello"}],
     }
     save_auth()
-    save_project_config(build_project_config())
     monkeypatch.setattr(usecases, "get_client", lambda runtime: fake_client)
 
     result = invoke_cli(
         [
             "search",
+            "--project",
+            "project-a",
+            "--logstore",
+            "research",
             "--from",
             "2026-04-16 23:06:00",
             "--to",
@@ -316,17 +298,19 @@ def test_search_accepts_last_with_empty_query(
     invoke_cli,
     monkeypatch: pytest.MonkeyPatch,
     save_auth,
-    save_project_config,
 ) -> None:
     fake_client = MagicMock()
     fake_client.search_logs.return_value = {"meta": {"count": 0}, "data": []}
     save_auth()
-    save_project_config(build_project_config())
     monkeypatch.setattr(usecases, "get_client", lambda runtime: fake_client)
 
     result = invoke_cli(
         [
             "search",
+            "--project",
+            "project-a",
+            "--logstore",
+            "research",
             "--to",
             "2026-04-16 23:21:00",
             "--last",
@@ -343,16 +327,14 @@ def test_search_accepts_last_with_empty_query(
     assert kwargs["query"] == "with_pack_meta"
 
 
-def test_explicit_project_and_logstore_override_project_config(
+def test_explicit_project_and_logstore_work_correctly(
     invoke_cli,
     monkeypatch: pytest.MonkeyPatch,
     save_auth,
-    save_project_config,
 ) -> None:
     fake_client = MagicMock()
     fake_client.search_logs.return_value = {"meta": {"count": 0}, "data": []}
     save_auth()
-    save_project_config(build_project_config())
     monkeypatch.setattr(usecases, "get_client", lambda runtime: fake_client)
 
     result = invoke_cli(
@@ -377,7 +359,7 @@ def test_explicit_project_and_logstore_override_project_config(
     assert kwargs["logstore"] == "nginx"
 
 
-def test_search_with_explicit_project_and_logstore_ignores_invalid_project_config(
+def test_search_with_explicit_project_and_logstore_works_without_project_config(
     invoke_cli,
     monkeypatch: pytest.MonkeyPatch,
     save_auth,
@@ -386,9 +368,6 @@ def test_search_with_explicit_project_and_logstore_ignores_invalid_project_confi
     fake_client = MagicMock()
     fake_client.search_logs.return_value = {"meta": {"count": 0}, "data": []}
     save_auth()
-    config_path = tmp_path / ".alilog" / "settings.json"
-    config_path.parent.mkdir(parents=True, exist_ok=True)
-    config_path.write_text("{bad json", encoding="utf-8")
     monkeypatch.setattr(usecases, "get_client", lambda runtime: fake_client)
 
     result = invoke_cli(
@@ -413,68 +392,18 @@ def test_search_with_explicit_project_and_logstore_ignores_invalid_project_confi
     assert kwargs["logstore"] == "nginx"
 
 
-def test_search_requires_project_when_project_config_missing(
-    invoke_cli,
-    monkeypatch: pytest.MonkeyPatch,
-    save_auth,
-) -> None:
-    fake_client = MagicMock()
-    save_auth()
-    monkeypatch.setattr(usecases, "get_client", lambda runtime: fake_client)
-
-    result = invoke_cli(
-        [
-            "search",
-            "--from",
-            "2026-04-16 23:06:00",
-            "--to",
-            "2026-04-16 23:21:00",
-            "--query",
-            "error",
-        ]
-    )
-
-    assert result.exit_code != 0
-    assert "缺少 ProjectName" in result.output
-
-
-def test_search_requires_logstore_when_project_config_missing_default_logstore(
-    invoke_cli,
-    monkeypatch: pytest.MonkeyPatch,
-    save_auth,
-    save_project_config,
-) -> None:
-    fake_client = MagicMock()
-    save_auth()
-    save_project_config(build_project_config(default_logstore=None))
-    monkeypatch.setattr(usecases, "get_client", lambda runtime: fake_client)
-
-    result = invoke_cli(
-        [
-            "search",
-            "--from",
-            "2026-04-16 23:06:00",
-            "--to",
-            "2026-04-16 23:21:00",
-            "--query",
-            "error",
-        ]
-    )
-
-    assert result.exit_code != 0
-    assert "缺少 LogStoreName" in result.output
-
-
 @pytest.mark.parametrize("option", ["--page", "--size"])
 def test_search_rejects_non_positive_pagination_values(
     invoke_cli,
     option: str,
-    save_project_config,
 ) -> None:
-    save_project_config(build_project_config())
     result = invoke_cli(
         [
             "search",
+            "--project",
+            "project-a",
+            "--logstore",
+            "research",
             "--from",
             "2026-04-16 23:06:00",
             "--to",
@@ -490,11 +419,14 @@ def test_search_rejects_non_positive_pagination_values(
     assert "x>=1" in result.output
 
 
-def test_context_rejects_non_positive_size(invoke_cli, save_project_config) -> None:
-    save_project_config(build_project_config())
+def test_context_rejects_non_positive_size(invoke_cli) -> None:
     result = invoke_cli(
         [
             "context",
+            "--project",
+            "project-a",
+            "--logstore",
+            "research",
             "--pack-meta",
             "1|cursor|54|6",
             "--pack-id",

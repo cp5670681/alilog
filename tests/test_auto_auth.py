@@ -21,7 +21,6 @@ def test_run_search_reauthenticates_and_retries_once(
         password="password",
         seed="seed",
         config_path=tmp_path / ".alilog" / "auth.json",
-        project_config_path=tmp_path / ".alilog" / "settings.json",
     )
     clients = [MagicMock(), MagicMock()]
     clients[0].search_logs.side_effect = AliLogError("日志查询失败: HTTP 401")
@@ -77,7 +76,6 @@ def test_run_search_auto_logs_in_when_cookie_is_missing(
         password="password",
         seed="seed",
         config_path=tmp_path / ".alilog" / "auth.json",
-        project_config_path=tmp_path / ".alilog" / "settings.json",
     )
     client = MagicMock()
     client.search_logs.return_value = {"meta": {"count": 1}, "data": []}
@@ -132,7 +130,6 @@ def test_run_search_expired_auth_without_credentials_points_to_manual_login(
         password=None,
         seed=None,
         config_path=tmp_path / ".alilog" / "auth.json",
-        project_config_path=tmp_path / ".alilog" / "settings.json",
     )
     client = MagicMock()
     client.search_logs.side_effect = AliLogError("日志查询失败: HTTP 401")
@@ -170,7 +167,6 @@ def test_auto_login_requires_username_password_and_seed(tmp_path) -> None:
         password=None,
         seed="seed",
         config_path=tmp_path / ".alilog" / "auth.json",
-        project_config_path=tmp_path / ".alilog" / "settings.json",
     )
 
     with pytest.raises(AliLogError, match="username/password/seed"):

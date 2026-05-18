@@ -56,14 +56,3 @@ def save_auth(config_path: Path) -> Callable[[str | None, str | None], None]:
         )
 
     return _save
-
-
-@pytest.fixture
-def save_project_config(project_root: Path) -> Callable[[str], Path]:
-    def _save(content: str) -> Path:
-        path = project_root.parent / ".alilog" / "settings.json"
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(content, encoding="utf-8")
-        return path
-
-    return _save

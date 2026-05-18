@@ -82,15 +82,6 @@ Example:
 }
 ```
 
-Default project and logstore settings are stored in `~/.alilog/settings.json`.
-
-```json
-{
-  "default_project": "k8s-log-c19af6eaf83e44c28a7eb544564eee247",
-  "default_logstore": "research"
-}
-```
-
 ## Search Logs
 
 `search` accepts:
@@ -100,16 +91,7 @@ Default project and logstore settings are stored in `~/.alilog/settings.json`.
 - `YYYY-MM-DD HH:MM[:SS]`
 - relative windows via `--last`
 
-If `~/.alilog/settings.json` already defines `default_project` and `default_logstore`, `--project` and `--logstore` are optional:
-
-```bash
-alilog search \
-  --from '2026-04-16 23:06:00' \
-  --to '2026-04-16 23:21:00' \
-  --query 'error'
-```
-
-You can still override them explicitly when needed:
+`--project` and `--logstore` are required parameters:
 
 ```bash
 alilog search \
@@ -134,7 +116,7 @@ alilog search \
 
 `context` uses `pack_id` and `pack_meta` from `search` output and fetches both previous and next logs by default.
 
-Similarly, if `~/.alilog/settings.json` already defines `default_project` and `default_logstore`, `--project` and `--logstore` can be omitted. The full form is:
+`--project` and `--logstore` are required parameters:
 
 ```bash
 alilog context \

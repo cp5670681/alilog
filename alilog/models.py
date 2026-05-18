@@ -62,21 +62,6 @@ class AuthConfig:
 
 
 @dataclass(frozen=True)
-class ProjectConfig:
-    """项目配置信息。
-
-    存储项目默认日志服务配置，通常从 ~/.alilog/settings.json 文件加载。
-
-    Attributes:
-        default_project: 默认的阿里云 SLS 项目名称
-        default_logstore: 默认的日志库名称
-    """
-
-    default_project: str | None = None
-    default_logstore: str | None = None
-
-
-@dataclass(frozen=True)
 class SearchWindow:
     """日志查询时间窗口。
 
@@ -106,7 +91,6 @@ class RuntimeOptions:
         password: RAM 用户密码
         seed: TOTP seed
         config_path: 全局认证配置文件路径（~/.alilog/auth.json）
-        project_config_path: 默认项目配置文件路径（~/.alilog/settings.json）
     """
 
     cookie: str | None
@@ -115,4 +99,3 @@ class RuntimeOptions:
     password: str | None
     seed: str | None
     config_path: Path
-    project_config_path: Path
