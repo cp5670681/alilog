@@ -91,6 +91,7 @@ def auto_login_with_password(
                 click_first_visible(page, ["button:has-text('登录')"], "登录按钮")
                 page.wait_for_timeout(3000)
                 complete_mfa_if_present(page, seed)
+                handle_password_reset_if_present(page)
                 wait_for_login_redirect(page)
                 page_html = read_page_html_after_navigation(page)
                 cookie_header = build_cookie_header(
@@ -245,5 +246,18 @@ def complete_mfa_if_present(page: Any, seed: str) -> None:
     try:
         if confirm_button.is_visible(timeout=5000):
             confirm_button.click()
+    except PlaywrightTimeoutError:
+        return
+
+
+def handle_password_reset_if_present(page: Any) -> None:
+    """处理密码重置页面，点击'跳过重置'继续登录流程。"""
+    page.wait_for_timeout(2000)
+    try:
+        # 尝试多种方式定位"跳过重置"按钮
+        skip_button = page.get_by_text("跳过重置").first
+        if skip_button.is_visible(timeout=5000):
+            skip_button.click()
+            page.wait_for_timeout(3000)
     except PlaywrightTimeoutError:
         return

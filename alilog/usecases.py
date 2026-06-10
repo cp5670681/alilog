@@ -224,6 +224,7 @@ def login_auth(
     *,
     browser: str | None,
     login_url: str = DEFAULT_LOGIN_URL,
+    headless: bool = True,
     confirm: Callable[[], object] | None = None,
 ) -> AuthConfig:
     """登录并保存认证。
@@ -235,13 +236,14 @@ def login_auth(
         runtime: 运行时选项
         browser: 浏览器可执行文件路径
         login_url: 登录页面 URL
+        headless: 是否使用无头模式
         confirm: 确认回调函数
 
     Returns:
         保存认证配置
     """
     if has_auto_login_credentials(runtime):
-        return save_refreshed_auth(runtime, auto_login_auth(runtime))
+        return save_refreshed_auth(runtime, auto_login_auth(runtime, headless=headless))
     config = capture_auth_via_cdp(
         browser=browser,
         login_url=login_url,
@@ -250,7 +252,7 @@ def login_auth(
     return save_refreshed_auth(runtime, config)
 
 
-def auto_login_auth(runtime: RuntimeOptions) -> AuthConfig:
+def auto_login_auth(runtime: RuntimeOptions, *, headless: bool = True) -> AuthConfig:
     """使用 auth.json 中的账号、密码和 seed 自动登录。"""
     if not runtime.username or not runtime.password or not runtime.seed:
         raise AliLogError(
@@ -261,6 +263,7 @@ def auto_login_auth(runtime: RuntimeOptions) -> AuthConfig:
         username=runtime.username,
         password=runtime.password,
         seed=runtime.seed,
+        headless=headless,
     )
 
 

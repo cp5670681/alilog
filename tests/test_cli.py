@@ -134,7 +134,7 @@ def test_auth_login_uses_auto_login_when_credentials_are_configured(
     monkeypatch.setattr(
         usecases,
         "auto_login_auth",
-        lambda runtime: AuthConfig(cookie="fresh-cookie", csrf_token="fresh-csrf"),
+        lambda runtime, **kwargs: AuthConfig(cookie="fresh-cookie", csrf_token="fresh-csrf"),
     )
     monkeypatch.setattr(
         usecases,

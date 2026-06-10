@@ -236,8 +236,14 @@ def auth_save(
     show_default=True,
     help="打开的登录页地址。",
 )
+@click.option(
+    "--no-headless",
+    is_flag=True,
+    default=False,
+    help="显示浏览器窗口（用于调试自动登录流程）。",
+)
 @as_click_command
-def auth_login(browser: str | None, login_url: str) -> None:
+def auth_login(browser: str | None, login_url: str, no_headless: bool) -> None:
     """登录并保存认证。
 
     启动浏览器等待用户完成阿里云登录，自动提取并保存认证信息。
@@ -252,6 +258,7 @@ def auth_login(browser: str | None, login_url: str) -> None:
         runtime,
         browser=browser,
         login_url=login_url,
+        headless=not no_headless,
         confirm=lambda: click.prompt(
             "登录完成后回到终端按回车继续",
             default="",
